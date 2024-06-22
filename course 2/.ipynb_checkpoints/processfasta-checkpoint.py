@@ -46,12 +46,18 @@ def main():
     # the optional arguments
     # the arguments are everything beyond "processfasta.py"
     # l:h because -l <length>
+
+    # list of tupules, list 
     o, a = getopt.getopt(sys.argv[1:], 'l:h')
+
+    
+    print("o", o) # o is a list of tupules [('-h', ''), ('-l', '250')] 
+    print("a", a) # a ['myfile.txt'] is just a list of the mandatory args. 
 
     # create a dictionary for the optional params/args
     optional_args = {} 
 
-    # fill in the parameters and args 
+    # fill in the parameters and args, o is a list of tupules.
     for k,v in o:
         optional_args[k] = v
 

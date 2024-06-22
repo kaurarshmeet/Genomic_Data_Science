@@ -1,0 +1,14 @@
+o [('-h', '')]
+a ['myfile.txt']
+
+    processfasta.py: Builds a dictionary with all sequences in 
+    a specified file bigger than a given length.
+    
+    processfasta.py [-h] [-l <length] <filename> 
+
+    -h: print this message
+
+    - l <length>: only build dictionary with sequencies >= the 
+    length. Default length = 0.
+
+    <filename>: the FASTA file to read from. 

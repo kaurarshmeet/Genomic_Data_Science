@@ -59,3 +59,6 @@ def query_index(p, t, index, numhits = False):
     if not numhits:
         return offsets
     return offsets, numhits
+
+import bisect
+   

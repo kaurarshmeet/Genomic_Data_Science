@@ -257,3 +257,132 @@ def approximate_match_bm(p, t, k, hits = False):
     if hits == False:
         return list_actual_matches
     return list_actual_matches, index_hits
+
+def hamming_distance(x, y): 
+    """ returns hamming distance (subs only). """
+    subs = 0
+    for i in range(len(x)):
+        if x[i] != y[i]: 
+            subs += 1 
+    return subs 
+
+def edit_distance(x, y):
+    """ uses dynamic programming to compute edit distance. """
+    D = [] # intial array 
+    
+    # initialize the array as rows = (x+1) by cols = (y+1) (+1 because we're counting the empty prefix)
+    for i in range(len(x) + 1):
+        D.append([0] * (len(y) + 1))
+
+    # initialize first row as 0 through y+1
+    for i in range(len(y) + 1):
+        D[0][i] = i
+    # initialize first column as 0 through x+1 
+    for i in range(len(x) + 1):
+        D[i][0] = i
+    
+    # step through and fill in the rest of the matrix (not going through the top left corner)
+    # for each row... 
+    for r in range(1, len(x) + 1): 
+        # for each column...
+        for c in range(1, len(y) + 1): 
+            # check if the strings are equal at the indices corresponding to each character's row/column 
+            delt = 0 if x[r-1] == y[c-1] else 1
+            # evaluate the values of the top, left and diagonal choices
+            top = D[r-1][c] + 1
+            left = D[r][c-1] + 1
+            diagonal = D[r-1][c-1] + delt 
+            # new spot filled by min of all choices 
+            D[r][c] = min(top, left, diagonal)
+
+    # once done filling in the matrix, return bottom right corner value 
+    return D[len(x)][len(y)]
+
+# global alignment 
+
+# A and G are purines
+# C and T are pyrimidines
+alphabet = ['A', 'C', 'G', 'T']
+# penalty matrix 
+# nucleotide against A, C, G, T, skip
+# row A, C, G, T
+penalty = [ [0, 4, 2, 4, 8], #A 
+            [4, 0, 4, 2, 8], #C
+            [2, 4, 0, 4, 8], #G
+            [4, 2, 4, 0, 8], #T 
+            [8, 8, 8, 8, 8] ] #all skips
+
+def global_alignment(x, y):
+    D = [] # intial array 
+    
+    # initialize the array as rows = (x+1) by cols = (y+1) (+1 because we're counting the empty prefix)
+    for i in range(len(x) + 1):
+        D.append([0] * (len(y) + 1))
+
+    """ 
+    Step: Initialize first row and column 
+    - top right char is always 0
+    - the first column should contain all skips, the penalties for skipping a character.
+    - for each column value in the first row (after column 1), penalties for skipping a character. 
+    """
+    
+    # initialize first column 
+    # only 1, len(x) + 1 because top corner should be 0. e
+    for i in range(1, len(x) + 1):
+        D[i][0] = D[i-1][0] + penalty[alphabet.index(x[i-1])][-1]
+     # initialize first row 
+    for i in range(1, len(y) + 1):
+        # take the character to the current character and add the penalty of a skip for that character
+        D[0][i] = D[0][i-1] + penalty[-1][alphabet.index(y[i-1])]
+    
+    # step through and fill in the rest of the matrix (not going through the top left corner)
+    # for each row... 
+    for r in range(1, len(x) + 1): 
+        # for each column...
+        for c in range(1, len(y) + 1): 
+            # evaluate the values of the top, left and diagonal choices
+            top = D[r-1][c] +  penalty[alphabet.index(x[r-1])][-1] # penalty for skipping a character in y 
+            left = D[r][c-1] + penalty[-1][alphabet.index(y[c-1])] # penalty for skipping a character
+            diagonal = D[r-1][c-1] + penalty[alphabet.index(x[r-1])][alphabet.index(y[c-1])] # penalty for difference in char
+            # new spot filled by min of all choices 
+            D[r][c] = min(top, left, diagonal)
+
+    # once done filling in the matrix, return bottom right corner value 
+    return D[len(x)][len(y)]
+
+from itertools import permutations
+
+def overlap(a, b, min_length = 3): # min length of the overlap. 
+    """ find overlap betwedn suffix of a and prefix of b. 
+    Mimumum overlap must be 3 between the suffix and prefix by default.
+    If the suffix and prefix overlap by less than min_length, return 0. 
+    If the suffix and prefix overlap by more than min_length, return their max overlap length. """
+    start = 0 # start seaching at index 0
+    while True:
+        # search for the first prefix substring of b (length 3) in a 
+        start = a.find(b[:min_length], start) 
+        # if there was no occurence of an overlap of size min_length, return 0. 
+        if start == -1:
+            return 0 
+        # if the start is not -1, we found prefix of b in a. 
+        # check that the prefix of a matches with the suffix of a (after the start occurence of b)
+        if b.startswith(a[start:]):
+            return len(a) - start 
+        # if the prefix of b didn't match fully with the suffix of a after start, 
+        # increment start so we can start searching at the next place. 
+        start += 1 
+
+def naive_overlap_map(reads, k): 
+    """ Reads and min overlap length k """
+    olaps = {} # dictionary of overlaps 
+
+    """ For all pairs of reads in a set of reads, 
+    calculate the overlap between a and b (with min_length = k)
+    if the overlap is greater than zero, record that overlap in the dictionary. 
+    """
+    for a, b in permutations(reads, 2):
+        olen = overlap(a, b, min_length=k)
+        if olen > 0: 
+            olaps[(a, b)] = olen 
+    
+    return olaps 

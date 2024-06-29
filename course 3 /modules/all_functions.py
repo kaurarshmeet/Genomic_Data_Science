@@ -386,3 +386,75 @@ def naive_overlap_map(reads, k):
             olaps[(a, b)] = olen 
     
     return olaps 
+
+import itertools
+
+def scs(ss): 
+    superstring = None
+    # for each possible ordering, generate the shortest possible substring 
+    for ordering in itertools.permutations(ss): 
+        # initialize the superstring with the first string in the list
+        current_superstring = ordering[0] 
+        # for every overlapping pair (including first string in the list )
+        for i in range(len(ss)-1):
+            read, next_read = ordering[i], ordering[i+1]
+            # find overlap length between the current string and the next string
+            olen = overlap(read, next_read, min_length=1)
+            # add hte non-overlapping bit. 
+            current_superstring += next_read[olen:]
+        if superstring == None or len(superstring) > len(current_superstring):
+            superstring = current_superstring
+    return superstring
+
+def pick_max_overlap(reads, k):
+    """ Find the pair of reads with maximum overlap. """
+    reada, readb = None, None
+    best_olen = 0 
+
+    # for each pair of reads possible, calculate overlap between them
+    # store the reads if they have longest overlap 
+    for a,b in itertools.permutations(reads, 2):
+        olen = overlap(a, b, min_length=k)
+        if olen > best_olen:
+            reada, readb = a, b
+            best_olen = olen 
+    return reada, readb, best_olen
+
+def greedy_scs(reads, k): 
+    read_a, read_b, olen = pick_max_overlap(reads, k)
+    while olen > 0:
+        # remove read a and b
+        reads.remove(read_a)
+        reads.remove(read_b)
+        # put back a read which contains both of them 
+        reads.append(read_a + read_b[olen:])
+
+        # next iteration = reset the new most overlapping reads
+        read_a, read_b, olen = pick_max_overlap(reads, k)
+    return ''.join(reads) # return as one string, also concatenates any nodes with overalp 0/
+
+def de_bruijn_ize(seq, k):
+    edges = [] 
+    nodes = set() # no duplicates 
+
+    # build all kmers of the given string. 
+    for i in range(len(seq)-k): 
+        # append a tupule of both of the (k-1)mers, [0] is right, [1] is left, indicating direction by sequence.
+        # (a, b) means a points to b
+        edges.append((seq[i:i+k-1], seq[i+1:i+k]))
+        # add the (k-1)mers to the set of nodes 
+        nodes.add(seq[i:i+k-1])
+        nodes.add(seq[i+1:i+k])
+    return nodes, edges 
+
+# eulerian walk 
+
+def visualize_de_bruijn(st, k):
+    """ Visualize a directed multigraph using graphviz """
+    nodes, edges = de_bruijn_ize(st, k)
+    dot_str = 'digraph "DeBruijn graph" {\n'
+    for node in nodes:
+        dot_str += '  %s [label="%s"] ;\n' % (node, node)
+    for src, dst in edges:
+        dot_str += '  %s -> %s ;\n' % (src, dst)
+    return dot_str + '}\n'

@@ -1,0 +1,126 @@
+Last login: Mon Jul  1 14:40:10 on ttys006
+❯ # Homework I, attempt II:
+❯ # Question 1: 3
+❯ # Question 2: 5453
+❯ # Question 3: 5456
+❯ # Question 4:
+❯ # Question 17:
+How many genes are in common to all three conditions?
+zsh: no matches found: conditions?
+❯ cd /Users/arshmeetkaur/Genomic_Data_Science/command_line_tools/gencommand_proj1_data\ 2
+❯ # Question 1: chromsomes in the genome
+❯ grep -c ">" apple.genome
+3
+❯ # Question 2: How many genes?
+❯ cut -f1 apple.genes| uniq -c | wc -l
+    5453
+❯ # Question 3: How many transcript variants?
+❯ cut -f2 apple.genes| uniq -c | wc -l
+    5456
+❯ # Question 4: How many genes have a single splice variant?
+❯ # single splice variant: a single splice variant is a gene that only has one transcript id expressed for the gene.
+❯ cut -f1 apple.genes| uniq -c | less # get the gene lines, count how many times each gene is mentioned
+❯ cut -f1 apple.genes| uniq -c | grep -c " 1 "  # get the gene lines, count how many times each gene is mentioned, count how many of those lines with counts have count = 1
+5450
+❯ # Question 5: Two or more splice variants?
+❯ cut -f1 apple.genes| uniq -c | grep -v " 1 " | wc -l  # get the gene lines, count how many times each gene is mentioned, exclude lines with count = 1, count number of lines left
+       3
+❯ ## check 4 and 5
+❯ cut –f1 apple.genes | sort | uniq –c | grep –c “ 1 “ # q4
+uniq: usage: cut -b list [-n] [file ...]
+       cut -c list [file ...]
+       cut -f list [-s] [-w | -d delim] [file ...]
+–c: No such file or directory
+grep: “: No such file or directory
+grep: 1: No such file or directory
+grep: “: No such file or directory
+❯ cut –f1 apple.genes | sort | uniq –c | grep –c "1" # q4
+usage: cut -b list [-n] [file ...]
+       cut -c list [file ...]
+       cut -f list [-s] [-w | -d delim] [file ...]
+uniq: –c: No such file or directory
+grep: 1: No such file or directory
+❯ cut –f1 apple.genes | sort | uniq –c | grep –c "1" # q4
+grep: 1: No such file or directory
+usage: cut -b list [-n] [file ...]
+       cut -c list [file ...]
+       cut -f list [-s] [-w | -d delim] [file ...]
+uniq: –c: No such file or directory
+❯ cut –f1 apple.genes | sort | uniq –c | grep –c " 1 " # q4
+usage: cut -b list [-n] [file ...]
+       cut -c list [file ...]
+       cut -f list [-s] [-w | -d delim] [file ...]
+uniq: –c: No such file or directory
+grep:  1 : No such file or directory
+❯ # seems something wrong dunno
+❯ # Question 6: How many genes on the + strand?
+❯ # previous approach: put all the + and - in one file and count pluses and minuses
+❯ # problem with previous approach: they asked genes, not transcripts and each row in apple.genes was corressponding to a transcript
+❯ cut -f1,4 apple.genes | uniq -c | grep -c "+" # isolate gene and + or -, collapse duplicate entries (same gene, same strand on each other) and count the occurences of "+"
+2662
+❯ cut -f1,4 apple.genes | uniq -c | grep -c "-" # isolate gene and + or -, collapse duplicate entries (same gene, same strand on each other) and count the occurences of "-"
+2791
+❯ # Question 7: ^^
+❯ # Question 8: How many genes in chr1?
+❯ # same problem with previous approach as q6/q7, did not collapse duplicate genes.
+❯ # additionally, question 8, 9, 10 can all be answered with uniq -c
+❯ cut -f1,3 apple.genes | uniq -c | less # collapse all genes in on themselves
+❯ cut -f1,3 apple.genes | uniq -c | grep -c "chr1"
+1624
+❯ cut -f1,3 apple.genes | uniq -c | grep -c "chr2"
+2058
+❯ cut -f1,3 apple.genes | uniq -c | grep -c "chr3"
+1771
+❯ # Question 9: How many transcripts on 9) chr1 10) chr2 11) chr3
+❯ # now i just have to skip the part where i collapse uniq with the uniq -c c ommand
+❯ cut -f1,3 apple.genes | grep -c "chr1"
+1625
+❯ cut -f1,3 apple.genes | grep -c "chr2"
+2059
+❯ cut -f1,3 apple.genes | grep -c "chr3"
+1772
+❯ # Question 14: Genes common between condition A and B
+❯ # in order to compare two things, must first sort
+❯ cut -f1 apple.conditionA | sort -u > condA.sorted.unique
+❯ cut -f1 apple.conditionB | sort -u > condB.sorted.unique
+❯ comm condA.sorted.unique condB.sorted.unique | less
+❯ comm -1 -2 condA.sorted.unique condB.sorted.unique | wc -l # isolate only those in common, count them
+    2410
+❯ # Question 15: genes exclusive to condA
+❯ cut -f1 apple.conditionC | sort -u > condC.sorted.unique
+❯ # first compare B and C, get their commons, then compare that to A
+❯ # cannot find error with my previous approach => found something on course discussion about how these questions were unclear, maybe it is asking between A and B?
+❯ comm -2 -3 condA.sorted.unique condB.sorted.unique | wc -l # isolate unique to file 1 and count them
+    1205
+❯ comm -1 -3 condA.sorted.unique condB.sorted.unique | wc -l # file 2 only
+    1243
+❯ # Question 16 ^^
+❯ # Question 17: Common between all three files
+❯ # first get comm between A and B, then compare to C
+❯ comm -3 condC.sorted.unique <(comm -3 condA.sorted.unique condB.sorted.unique)|wc -l
+    4488
+❯ # doesn't match previous correct answer?
+❯ # that means previous approach really wasn't wrong just wording of 15 and 16
+❯ ## can check with the easier method in the blurb
+❯ cat cond{A,B,C}.sorted.unique | uniq -c | grep -c " 3 "
+0
+❯ cat cond{A,B,C}.sorted.unique | cut -f1 | uniq -c | grep -c " 3 "
+0
+❯ cat cond{A,B,C}.sorted.unique | cut -f1 | uniq -c | less
+❯ touch test
+❯ uniq -c test
+   1 Apple
+   1 Banana 
+   1 Apple %                                                                          ❯ sort test
+Apple
+Apple 
+Banana 
+❯ -uniq c test
+zsh: command not found: -uniq
+❯ uniq -c test
+   1 Apple
+   1 Banana 
+   1 Apple %                                                                          ❯ cat cond{A,B,C}.sorted.unique | cut -f1 | sort | uniq -c | grep -c " 3 "
+1608
+
+~/Genomic_Data_Science/com/gencommand_proj1_data 2 on main !2 ?2 ❯     at 05:46:35 PM

@@ -10,3 +10,4 @@ command_line_tools/**
 
 # Ensure .gitignore file in command_line_tools is not ignored
 !command_line_tools/.gitignore
+

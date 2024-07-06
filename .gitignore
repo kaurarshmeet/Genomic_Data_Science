@@ -1,0 +1,9 @@
+# Ignore all files in the command_line_tools directory
+command_line_tools/*
+
+# But do not ignore the directory itself
+!command_line_tools/
+
+# Ignore everything in the directory, except this file
+!command_line_tools/.gitignore
+

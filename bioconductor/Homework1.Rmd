@@ -1,11 +1,11 @@
 ---
-title: "annotation hub project"
+title: annotation hub project
 output: anootation hub project
 ---
 
 # Homework 1: Annotation Hub Project
 
-## Question 1: Use annotation hub to get data on CpG islands in the human genome. How many islands exists on autosomes (chrom 1-22) 
+## Question 1: Use annotation hub to get data on CpG islands in the human genome. How many islands exists on autosomes (chrom 1-22)
 
 ```{r}
 
@@ -33,17 +33,16 @@ seqlevels(reduced_islands)
 reduced_islands
 ```
 
-## Question 2: How many CpG islands exist on chromosome 4? 
+## Question 2: How many CpG islands exist on chromosome 4?
 
 ```{r}
-
 # isolate the stuff from chromosome 4 
 reduced_islands
 chr4_islands <- reduced_islands[seqnames(reduced_islands) == "chr4"]
 chr4_islands # 1031 ranges from islands. 
 ```
 
-## Question 3: Obtain data from H3K27me3/H1 cell line from the Epigenomics Roadmap Using Annotation Hub. Only count the autosomes (chr 1-22).  How many bases do these reigons cover? 
+## Question 3: Obtain data from H3K27me3/H1 cell line from the Epigenomics Roadmap Using Annotation Hub. Only count the autosomes (chr 1-22). How many bases do these reigons cover?
 
 ```{r}
 
@@ -81,7 +80,7 @@ metadata_h1
 mean(metadata_h1$signalValue)
 ```
 
-## Question 5: Bivalent regions bound by H3K4me3 and H3K27me3. How many bases on standard chromosomes are bivalently marked? 
+## Question 5: Bivalent regions bound by H3K4me3 and H3K27me3. How many bases on standard chromosomes are bivalently marked?
 
 ```{r}
 
@@ -103,7 +102,7 @@ query_hits <- length(unique(queryHits(biv_ov))) # total hits
 query_hits / length(bivalent_reigons)
 ```
 
-## Question 7: What percentage of the bases part of the CpG islands overlap the bivalent marked? AKA How many bases from the cpg islands overlap bivalent reigons. 
+## Question 7: What percentage of the bases part of the CpG islands overlap the bivalent marked? AKA How many bases from the cpg islands overlap bivalent reigons.
 
 ```{r}
 # find the reigons (bases) of interesection only, must be common to both 
@@ -135,7 +134,7 @@ cpg_bivalent <- intersect(cpg_stretched, bivalent_reigons)
 sum(width(reduce(cpg_bivalent)))
 ```
 
-## Question 9: How big a fraction (expressed as 0 and 1) of human genome is in a CpG Island? 
+## Question 9: How big a fraction (expressed as 0 and 1) of human genome is in a CpG Island?
 
 ```{r}
 
@@ -149,7 +148,7 @@ sum(seqlengths(reduced_islands)) / 3*10^9
 
 ```
 
-## Question 10: Odds Ratio For Overlap of Bivalent Marks With CPG islands 
+## Question 10: Odds Ratio For Overlap of Bivalent Marks With CPG islands
 
 ```{r}
 

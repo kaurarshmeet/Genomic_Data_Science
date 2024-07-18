@@ -592,7 +592,7 @@ query(ah, "H3K4me3", "Gm12878") # cell type included, 1856 records, lot more tha
 # use a more spreadsheet like interface -> whatever's he's using isn't working 
 ```
 
-## Usercase: AnnotationHub and GRanges, Part 1 and 2 
+## Usercase: AnnotationHub and GRanges, Part 1 and 2
 
 ```{r}
 
@@ -681,5 +681,3 @@ odds_ratio # OR = 18, the overlap between promoters and peaks is 18 times more e
 
 # conclusion: this might not be the right analysis, and the OR may be inflated but we can say there's probably SOME amount of enrichment happening here.
 ```
-
-##  

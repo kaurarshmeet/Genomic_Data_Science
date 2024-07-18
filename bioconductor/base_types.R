@@ -1,0 +1,685 @@
+# Module 1
+
+## What is bioconductor? 
+
+-   bioconductor = open source (anyone can view), open development (anyone can contribute) software for bioinformatics. 
+
+-   bioconductor is written in R
+
+-   lots of bioinformatics tools for specific tasks
+
+-   Bioconductor is a software repository of (thousands) R packages with some rules/guiding principles. 
+
+    -   Some packages are considered the gold-standard for the bioinformatics challenges. 
+
+    -   Most packages have good documentation, but it's sometimes challenging to find packages.
+
+    -   Many packages for the same type of problem so you have to figure out what’s the best 
+
+-   Bioconductor emphasizes reproducible research 
+
+-   Bioconductor is good for productivity, flexibility (being able to modify the tools you’re using, because of open source code).
+
+## Installing Bioconductor
+
+1.  install.packages("BiocManager")
+
+2.  BiocManager::install() \# installs Bioconductor version 3.19 (BiocManager 1.30.23), R 4.4.1 (2024-06-14) and updates/adds packages. Will probably also ask you to update R packages.
+
+3.  BiocManager::valid() \# checks if all the packages are the updated versions. 
+
+## The Bioconductor Website 
+
+bioconductor.org 
+
+-   Look under the packages tab \> Software (2300 packages) 
+
+-   Sample package: [Bioconductor - DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
+
+    -   Brief account: vignette. Every package in bioconductor has one and it can be an Rscript 
+
+    -   Package news file: What changes from version to version  
+
+-   Learn \> Common Workflows : shows you which packages to use together for some task 
+
+-   Learn \> Courses also helpful 
+
+R studio 
+
+-   R: Help \> Home \> Reference \> Packages \> search your package \> Vignettes or News 
+
+-   R \> Packages \> click on a package, will give you the information. 
+
+## Useful Online Sites 
+
+-   [Bioconductor Forum](https://support.bioconductor.org/): where you can ask questions.
+
+-   stack overflow
+
+-   R documentation
+
+## R Base Types:
+
+### Vectors in R:
+
+-   vectors are datatypes which hold a "list" of objects that are all of the same type.
+-   went over creating a vector, subvector, length of a vector, manipulating values in a vector, dot product, cross product, concatenating vectors, create names for elements in a vector and then access the vector elements with their names.
+
+```{r}
+
+# to create a vector, use the c format 
+x <- c(1, 2, 3)
+y <- c("R", "is", "fun")
+class(x) # numeric 
+class(y) # character 
+z <- c(x, y) # combination vector which numerics and characters, puts them in order
+class(z) # characters (odd behavior)
+z 
+
+# access elements in the vector 
+# indexing is 1-based.
+random_data <- runif(100)
+# to access somethig in a vector just use vector[location] like you usually would. 
+print(paste("val at index 7:", random_data[7]))
+
+# create a "subvector" with the range.
+subset <- random_data[7:14] # start and end are both included.
+length(subset)
+subset_2 <- random_data[c(1, 10, 100)] # grabs values from random_data at 1, 10, 100 withthe vector[location] format. 
+subvec <- random_data[-2] # grabs everything but the vector's value at index 2
+subvec_2 <- random_data[-(2:49)] # excludes everything from [2, 49] all inclusive
+# create a subvector with a "logical" (similar to a "list comprehension) 
+logical_subvec <- random_data[(random_data > 0.5)] # you can put any boolean expression inside of the vector[location]
+logical_subvec
+length(logical_subvec)
+logical_2 <- random_data[(random_data %in% c(1:100))] # only includes numbers in the second vector
+logical_2
+
+# length of a vector 
+length(10) # 1 because a single value is one 
+
+# manipulating every single value in a vector 
+# basic mathematical operations
+ex_vect <- c(1, 2, 3)
+ex_vect_add <- ex_vect + 2 
+ex_vect_add
+# apply a function 
+ex_2 <- c(1.5, 2.5, 3.2)
+print(round(ex_2)) # 2 2 3 
+
+# dot product of two vectors 
+dot_product <- ex_vect_add %*% ex_2
+class(dot_product) # gives you a matrix 
+as.numeric(dot_product) # gives you a value
+# cross product 
+ex_vect_add * ex_2 # returns a vector 
+
+# concatenating two vectors
+lets <- c("eh", "maybe", "later")
+b <- c("a", "b", "c", "why?")
+paste(lets, b) # will concatenate each corresponding characters
+
+# generating sequences 
+x <- 1:20 # shorthand 
+y <- seq(from = 1, to = 20, by = 2) # it won't go past 20.
+y 
+z <- runif(n = 5, min = 0, max = 100) # size 5 vector with doubles between 0 and 100  
+z 
+
+# create names for vectors 
+i <- c(1, 1, 1)
+names(i) <- c("i", "j", "k")
+i
+i+1 # will only manipulate the numeric parts. 
+
+# access indices by name 
+(i+1)["k"] # 2 
+i["k"]
+
+i <- c(1, 2, 2)
+
+# Find any duplicates in an array 
+# anyDuplicated finds the first occurence where it's seen that object before. In this case, it's 3 because "2" is the 3rd element in the array and repeats element "2"
+anyDuplicated(i) 
+```
+
+### Types of numerical variables in R
+
+-   Vectors are the type of their atoms, we have different types of numerical data types of variables in R.
+
+```{r}
+
+# different numeric types.
+x <- 1:10 
+class(x) # integer because the objects in the vector are of type integer.
+x <- 1 
+class(x) # numeric 
+x <- 1L 
+class(x) # integer
+
+# the limit for integers is 2.1 Billion (slightly smaller than the human genome)
+# this is also the limit for vector length in R.
+# if you do hit the limit, convert it to "numeric" type
+.Machine$integer.max 
+as.numeric(1L)
+```
+
+### Matrices
+
+-   a matrix has rows and columns
+
+-   in R, matrices are created with the matrix() constructor
+
+```{r}
+
+# create a matrix 
+#         <- matrix(any vector, ncol, nrow, byrow = TRUE means fill through rows first)
+matrix_ex <- matrix(1:9, ncol = 3, nrow = 3, byrow = TRUE)
+
+# assign names to row and col headers
+rownames(matrix_ex) = letters[1:3]
+colnames(matrix_ex) = c("x", "y", "z")
+
+matrix_ex
+
+# information about the matrix 
+dim(matrix_ex) # in a vector
+# nrow, ncol
+
+# accessing matrix values 
+matrix_ex[1,2] # row 1 col 2 
+matrix_ex[1,] # row 1 
+matrix_ex[1:2, ] # row 1 and 2 
+
+# perform some operation on the whole matrix 
+new_matrix <- matrix_ex + 3 
+new_matrix - matrix_ex # gives you the difference between each corresponding element.
+
+# matrix comprehension expressions 
+matrix_ex[matrix_ex > 2] # all the values in the matrix abiding by this boolean expression, returned as a vector.
+```
+
+### List - any objects just in a list
+
+```{r}
+# you can give each element in the list a name in the construction.
+list_example = list(a = rnorm(3), b = letters[1:5], matrix) # numbers, letters, a function
+list_example
+str(list_example) # shows you the structure of the list
+list_example[1] # this gives you the vector inside the lists ($a)
+list_example[[1]] # this gives you the actual object without the vector.
+
+# can name the list afterwards.
+names(list_example) = c("numbers", "letters", "function") 
+str(list_example)
+
+# you can put data frames in the list, which is super useful to people programming in R.
+l3 <- list(numbers = rnorm(3), letters = letters[1:3], dataset = iris)
+l3
+```
+
+### Data Frames - these just consist of a bunch of columns.
+
+```{r}
+
+# data frames = row names have to be unique
+# each of the "names" are supposed to be labels given by "vectors"
+
+# option 1: encode the categorical variables as "Factors" (which basically assign a numerical value to each category)
+x <- data.frame(sex = factor(c("male", "female")), age = c(32, 34))
+x
+str(x)
+
+# option 2: dont encode
+x <- data.frame(sex = c("male", "female"), age = c(32, 34))
+x
+str(x)
+# typecasting in R: as(thing, type)
+```
+
+## GRanges
+
+Many things in genomics are thought of as intervals or sets of intervals (ranges of integers).
+
+Many tasks in genomics are about relating intervals to each other:
+
+-   Which promoters contains SNPs?
+
+-   Which transcription factor binding sites overlap a promoter?
+
+Functionality in the GenomicRanges and IRanges packages.
+
+-   essentailly, GRanges hold information about some interval like the chromosome of location, the interval, the strand, maybe the size of the chromosome, etc.
+
+### IRanges (Basic Use)
+
+-   they behave like vectors, they have a length.
+-   they basically contain three vectors: starts, ends, widths.
+
+Notes on the Basic Functions:
+
+*constructor*: IRanges(start vector, end) or IRanges(start, width)
+
+*resizing*: resize( irange, width = new width, fix = "start" "center" or "end" )
+
+*access:* start(), end(), width() \# apply any of these to irange or irange[row]
+
+*overlaps:*
+
+reduce(irange) \# stores the ground covered by any of the intervals from both ranges.
+
+union(irange) \# stores the ground covered by any of the intervals from both ranges.
+
+-   not sure what the difference is between union and reduce
+
+disjoin(irange) \# counts non-overlapping intervals only
+
+intersect(irange) \# counts the places of overlap between intervals only
+
+*quantifying overlaps:*
+
+ov \<- findOverlaps( query_irange, subject_irange) \# outputs a "matrix" of intervals that overlap each other from both the query and subject sets.
+
+queryHits( ov ) \# tells you which intervals in the query were found in the subject, can add unique() to get rid of duplicats
+
+countOverlaps( query_irange, subject_irange) \# tells you how many times each element (by index) in the query was overlapped in the subject
+
+nearest ( query, subject irange ) \# which of the intervals in the subject irange are closest to the query irange (by index)
+
+1.  <div>
+
+    ```{r}
+    # construct an iranges with the constructor iran
+    ir1 <- IRanges(start = c(1,3,5), end = c(3,5,7)) # width is the third attribute, and it is inferred.
+    ir1
+
+    ir2 <- IRanges(start = c(4,5,6), width = 3)
+    ir2
+
+    # we can resize the size of intervals 
+    # width(ir1) <- 1 # like this, artificially would shrink the width of each column
+    # or use the resize function
+    print("resizing:")
+    resize(ir1, width = 1, fix = "start") # pushes the end towards the start 
+    resize(ir1, width = 1, fix = "center") # pushes both ends towards each other 
+    resize(ir1, width = 1, fix = "end") # pushes hte start toward the end 
+    print("\n")
+
+    # access elements of the IRange.
+    ir1[1] # gives you the whole first row.
+    start(ir1[1]) # gives you the "start" elem in the first row.
+    start(ir1) # the full start column
+
+    # Define the plotting function
+
+    # xlim = limits for x axis, default to range of x (if it's an IRange, this will be an Iranges object)
+    # main = title of plot, defaults to title of x
+    # color = black by default 
+    # sep = the seperation between "bins" (I think spaces on the xaxis) default to 0.5 
+    plotRanges <- function(x, xlim = x, main = deparse(substitute(x)), col = "pink", sep = 0.5, ...) {
+      height <- 0.5 # height of each rectangle drawn 
+      
+      # if the xlim range is of class IRanges, it'll turn that into a "normal" vector range
+      if (is(xlim, "IRanges")) {
+        xlim <- c(min(start(xlim)), max(end(xlim)))
+      }
+      
+      # create a modified IRanges object with end + 1 coordinate.
+      # disjointBins(modified IRange) -> assigns each range (start to end) to a bin (bins 1 ,2, 3, etc).
+      # so bin1 is on the bottom, bin2 above, it, etc
+      # if two ranges overlap, they will be in different bins, if two ranges don't overlap, they will be in the same bin.
+      bins <- disjointBins(IRanges(start(x), end(x) + 1))
+      
+      # initialzies a plot.
+      plot.new()
+      # makes xlim the range we just defined earlier, ylim is height * number of bins 
+      plot.window(xlim = xlim, ylim = c(0, max(bins) * (height + sep)))
+      # bottom for y coordinates
+      ybottom <- bins * (sep + height) - height
+      
+      rect(start(x) - 0.5, ybottom, end(x) + 0.5, ybottom + height, col = col, ...)
+      title(main)
+      axis(1)
+    }
+    par(mfrow = c(2,1))
+
+    # visualizing the IRanges
+    ir3 <- IRanges(start = c(1,3,7,9), end= c(4,4,8,10))
+
+    plotRanges(ir3) # ground covered by each interval seperately
+    plotRanges(reduce(ir3)) # ground covered by any intervals 
+    plotRanges(disjoin(ir3)) # nonoverlapping intervals 
+
+    ir1 <- IRanges(start = c(1,3,5), width = 1)
+    ir2 <- IRanges(start = c(4,5,6), width = 1)
+    ir1 
+    ir2
+
+    plotRanges(ir1, xlim = c(1,10))
+    plotRanges(ir2, xlim = c(1,10))
+
+    # taking the union of two iranges 
+    plotRanges(union(ir1, ir2), xlim = c(1,10)) # merges both, creates an IRange of anywhere it *can* find any segment from either range. 
+
+    #taking the intersection 
+    plotRanges(intersect(ir1, ir2), xlim = c(1,10)) # creates IRange of only places where two segments are overlapping.
+
+    # reduction - order ranges left to right, merges overlapping/adjacent ones.
+    reduce(c(ir1, ir2))
+    plotRanges(reduce(c(ir1, ir2)), xlim = c(1,10)) 
+
+    # find the overlaps between intersections 
+    ir1 <- IRanges(start = c(1,4,8), end = c(3, 7, 10))
+    ir1
+    ir2 <- IRanges(start = c(3,4), width = 3)
+    ir2
+    # findOverlaps(query, subject)
+    ov <- findOverlaps(ir1, ir2) # a "matrix"
+    ov # 1 1 means range1 of query overlaps with range1 of subject 
+
+    queryHits(ov) # isolate the query hits. Can have duplicates because one range of the query could overlap with multiple ranges of the subject 
+    unique(queryHits(ov)) # will give you without the duplicates.
+
+    # count the overlaps
+    countOverlaps(ir1, ir2) # [1] 1 2 0 element 1 overlaps 1 range, element 2 overlaps 2 ranges, element 3 overlaps 0 ranges.
+
+    # see which intervals are closest to each other.
+    nearest(ir1, ir2) # [1] 1 1 2: for element 1 in ir1, element1 in ir2 is the best match
+    ```
+
+    </div>
+
+### GRanges
+
+-   very similar to IRanges but has more tools for genomes and chromosomes
+
+*construction:* GRanges(seqnames = chroms, strands, ranges)
+
+*flanking:* flank(grange, width) \# creates a GRange with elements of width, either ahead (-) or behind (+) the elements from grange.
+
+*promoters:* promoter(gr) \# promoter regions
+
+Sequence Info:
+
+*seqinfo:* seqinfo(gr) \# attributes like seqlength, circular chrom or not, etc.
+
+*genome:* genome(gr) \# name of genome for each entry. You can have genes from multiple genomes in one file. Labeling genomes provides some "type safety" and you wont be able to use certain methods that are only used to compare within-genome stuff.
+
+*seqlengths:* seqlengths(gr) \# length of chromosomes. You can set them like this.
+
+*seqlevels:* seqlevels(gr) \# gives you the chromosomes present as a list
+
+*seqnames:* seqnames(gr) \# the chromosomes for each element in this GRange (like "chr1", "chr2", "chr1"). They can be reset like this. You set them in the constructor too.
+
+-   have to set seqlevels(gr) first to include new chromosomes before adding new seqnames
+
+*Sorting:* sort(gr) \# sorts the table in terms of chromosome based on the order of chromsomes in the seqlevels vector
+
+```{r}
+
+# constructor 
+# the strand could be * which could mean unknown or entity on both strands.
+gr = GRanges(seqnames = c("chr1"), # chrom 
+             strand = c("+", "-", "+"),  # strand 
+             ranges = IRanges(start = c(1,3,5), width = 3) # iranges
+             )
+gr 
+
+# flanking sequence: flank(GRange, width)
+# will create a GRange object with intervals of the specified width width but forward or behind where the gr intervals are 
+flank(gr, 5) # on the positive strand, we go to the left, on the negative strand, we go to the right.
+
+# promoters - 2200 base interval up and downstream of the transcription site 
+promoters(gr)
+
+# sequence info 
+seqinfo(gr) # by default, there's no information on the sequences you've put in
+
+# chromosomes 
+# give it some sequence information.
+seqlengths(gr) = c("chr1" = 10) # length 
+seqinfo(gr)
+seqlevels(gr) # gives you the chromosome names.
+
+# adding new chromosomes 
+seqlevels(gr) <- c("chr1", "chr2", "chr3")
+
+# assign new seq values 
+seqnames(gr) = c("chr1", "chr2", "chr3")
+
+# sorting the Granges
+sort(gr) 
+
+# finding gaps 
+gaps(gr) # all the stuff on the chromosome that is not covered by iranges/granges
+# all ranges end at 10. 
+
+genome(gr) = "hg19"
+seqinfo(gr)
+
+genome(gr) <- c("hg19", "hg19", "hg18")
+seqinfo(gr) 
+```
+
+### Genomic Ranges - Basic GRanges Usage
+
+DataFrames ( a different R Class ) allow you to construct a dataframe from an irange and add extra columns (metadata) which is not allowed in score.
+
+You can create a DataFrame from a GRanges object, and your GRanges Object can have extra columns: values(gr) or mcols(gr) both allow you to add metadata columns.
+
+You can compare GRanges Objects using findOverlaps(gr1, gr2) and it'll spit out a table of which element from gr1 overlaps element from gr2.
+
+You can make a new GRanges Object using subsetByOverlaps(gr1, gr2) and it'll spit out a GRange that only contains intervals from gr1 that overlap with gr2.
+
+You can make a GRanges Object from an R dataframe (the normal type). If you have extra cols you can keep them in with an option, but you really only need start and end or start/width.
+
+```{r}
+
+ir = IRanges(start = 1:3, width = 2)
+
+# Data Frames allow many different objects 
+DF = DataFrame(ir = ir, # the iranges 
+               score = rnorm(3) # just some random score vals 
+               )
+
+DF # keeps a readable structure in there. 
+
+# create a datframe from a GRange 
+gr <- GRanges(seqnames = "chr1", strand = c("+", "-", "+"), ranges = IRanges(start = c(1,3,5), width = 3))
+gr # just a regular GRanges Object 
+
+# you can add a dataframe to the GRange 
+values(gr) = DataFrame(score = rnorm(3))
+gr
+# you can access the score and stuff with regular dataframe methods 
+gr$score 
+gr$score2 <- gr$score / 3
+gr$score2
+gr
+
+# GRanges MetaData column
+values(gr) # values represent the metadata columns, and here there are two 
+mcols(gr) # same thing, metadata columns 
+gr # now when you view it it says "2 metadata columns"
+
+# Find overlaps between GRanges 
+# gr and gr2 are identical except gr2 is all on the * strand.
+gr2 <- GRanges(
+  seqnames = c("chr1", "chr2", "chr1"),
+  strand = "*",
+  ranges = IRanges(start = c(1,3,5), width = 3) 
+  )
+gr2
+
+findOverlaps(gr, gr2) 
+gr[2]
+gr2[1]
+findOverlaps(gr, gr2, ignore.strand = TRUE) # anything on the * doesn't "disagree" with the + or - strand. But you can use this in cases where you want the stand ignored 
+
+# only select ranges from the grange which overlaps some ranges from the other grange
+gr 
+gr2
+subsetByOverlaps(gr2, gr) # pick only the parts of gr2 that overlap with gr
+
+# make a grange from a data frame 
+df = data.frame(chr = "chr1", start = 1:3, end = 4:6, score = rnorm(3)) # classic R dataframe 
+no_metadata <- makeGRangesFromDataFrame(df) # drops metadata (score column, extra columns)
+metadata <- makeGRangesFromDataFrame(df, keep.extra.columns = TRUE) # keep the metadatas
+
+metadata
+```
+
+## Genomic Ranges - seqinfo
+
+6 minutes!
+
+There are a lot of different chromosome naming styles, which can be a pain in the butt.
+
+```{r}
+
+# try to get rid of some of the chromosomes 
+gr = GRanges(
+  seqnames = c("chr1", "chr2"), 
+  ranges = IRanges(start = 1:2, end = 4:5)
+)
+seqlevels(gr) # shows you the chromosomes 
+# only keep records from one chromosome 
+seqlevels(gr, pruning.mode = "coarse") <- c("chr1")
+gr # only keeps chr1 entries 
+
+# alternative functions 
+keepSeqlevels(gr, "chr1")
+
+# keep standard chromosomes -> drops weird looking chromosome names (small contigs)
+new_gr <- keepStandardChromosomes(gr)
+new_gr
+
+# convert between different genome naming styles 
+newStyle <- mapSeqlevels(seqlevels(gr), "NCBI")
+newStyle # chr1 got converted to "1" 
+# you can use that new mapping in a renameSeqlevels function 
+gr = renameSeqlevels(gr, newStyle)
+gr 
+```
+
+## AnnotationHub
+
+-   a hub - local database of a lot of different online public data.
+
+-   you figure out what data you want then go out and find it online.
+
+-   examine many datasets / online resources simultaneously.
+
+```{r}
+ah = AnnotationHub() # downloads everything from annotation hub, gives you a snmapshot date. 
+ah
+
+ah[1] # a GRanges for UCSC Homo Sapiens hg19
+
+# who is providing the data? 
+unique(ah$dataprovider) # only UCSC for some reason?  
+
+unique(ah$species) # lots 
+
+# search this database? Narrow the elements down and then downlaod what you want 
+ah = subset(ah, species == "Homo sapiens") # subset 
+ah # 26651 records left
+
+# a function called query will search for a term 
+query(ah, "H3K4me3") # 2022 records, way too much  
+query(ah, "H3K4me3", "Gm12878") # cell type included, 1856 records, lot more than the video haha
+
+# use a more spreadsheet like interface -> whatever's he's using isn't working 
+```
+
+## Usercase: AnnotationHub and GRanges, Part 1 and 2 
+
+```{r}
+
+# get the relevant stuff
+ahub = subset(ah, species == "Homo sapiens")
+qhs = query(ahub, c("H3K4me3", "Gm12878"))
+qhs
+
+# select the elements -> potential options 
+gr1 = qhs[[2]]
+gr2 = qhs[[4]]
+
+gr1 # ranges and 5 metadata columns
+
+summary(width(gr1)) # the width of the ranges 
+
+summary(width(gr2)) # the width of the ranges -> looks like everything has been enforced to be 150.0 bases. 
+table(width(gr2))
+peaks = gr2 # we'll be using this moving forward
+
+qhs[4] # it's hg19
+
+# get annotation from AnnotationHub -> RefSeq -> good quality genomes
+qhs = query(ahub, "RefSeq")
+qhs
+qhs$genome # different genomes included here.
+genes = qhs[[1]] # download the first resource 
+genes # similar to GRange, UCSC Track 
+
+# how many transcripts? 
+table(table(genes$name)) # how many have a single transcript, how many have multiple. 
+
+# promoters 
+prom = promoters(genes)
+prom 
+table(width(prom)) # 2.2k 
+
+# now we have promoters, peaks, we're ready to ask if we have significant overlap? 
+# other words: is this histone modification enriched in promoters? 
+ov = findOverlaps(prom, peaks) # outputs all the plaes where query overlaps with subjects.
+ov
+# in order to avoid double counting -> count how many unique query mathces and subject matches there were.
+length(unique(queryHits(ov)))
+length(unique(subjectHits(ov)))
+
+# percent of peaks that overlap the promoter: (only peaks that overlap prom)/(num total peaks)
+length(subsetByOverlaps(peaks, prom, ignore.strand = TRUE)) / length(peaks) # 30 percent
+
+# percent of promoters that overlap the peaks: 
+length(subsetByOverlaps(prom, peaks, ignore.strand = TRUE)) / length(prom) # 50 percent 
+
+# is this a lot or not? 
+# we need to know how many bases the intersections are? 
+# how many bases do the peaks really cover? 
+
+# reduce - will combine any segments wherever they are
+# we'll take the vector for width and sum it to get the total width spanned by the segments in total. 
+sum(width(reduce(peaks, ignore.strand = TRUE))) / 10^6
+sum(width(reduce(prom, ignore.strand = TRUE))) / 10^6 
+# and how long is the intersect? (sum all the widths of the intersecting strains)
+sum(width(intersect(peaks, prom, ignore.strand = TRUE))) / 10^6
+
+# is the overlap significant? 
+inOut = matrix(0, ncol = 2, nrow = 2) # initializes to 0.
+colnames(inOut) = c("in", "out")
+rownames(inOut) = c("in", "out")
+inOut
+
+# in-in is numbases part of both things
+inOut[1,1] = sum(width(intersect(peaks, prom, ignore.strand = TRUE)))
+# in peaks, not in promoters (in, out)
+inOut[1,2] = sum(width(setdiff(peaks, prom, ignore.strand = TRUE)))
+# in promoters, not peaks (out, in)
+inOut[2,1] = sum(width(setdiff(prom, peaks, ignore.strand = TRUE)))
+# not in either: # bases in human genome - sum of everything else 
+#inOut[2,2] = 3*10^9 - sum(inOut)
+# or you can assume the human genome size is half of what it is because most of it is not navigable 
+inOut[2,2] = 1.5 * 10^9 - sum(inOut)
+inOut
+
+# we should now be able to get the odds ratio
+odds_ratio = inOut[1,1] * inOut[2,2] / (inOut[2,1] * inOut[[1,2]])
+odds_ratio # OR = 18, the overlap between promoters and peaks is 18 times more enriched than we expect. Even if you make the genome size smaller, you still have 8.91 
+
+# p-value with fischer's exact test: but because the numbers are so big, everything will be statistically significant.
+
+# conclusion: this might not be the right analysis, and the OR may be inflated but we can say there's probably SOME amount of enrichment happening here.
+```
+
+##  

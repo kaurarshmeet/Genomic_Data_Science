@@ -1,0 +1,174 @@
+---
+title: "annotation hub project"
+output: anootation hub project
+---
+
+# Homework 1: Annotation Hub Project
+
+## Question 1: Use annotation hub to get data on CpG islands in the human genome. How many islands exists on autosomes (chrom 1-22) 
+
+```{r}
+
+ah = AnnotationHub()
+qhs = query(ah, "CpG Islands")
+qhs # 57 records. 
+
+islands = qhs[["AH5086"]]# just take the first one 
+islands # seqnames holds the information about chromosome number, 28691
+class(islands) # GRange
+print(seqnames(islands)) # the names of the chromosomes.
+
+# merge the overlapping intervals 
+reduced_islands <- reduce(islands) # still 28691
+
+# define the vector of autosomes names. 
+autosome <- c(paste("chr", 1:22, sep = ""))
+autosome
+
+# only include the seqnames (chromosomes) that are in that autosome vector 
+seqlevels(reduced_islands, pruning.mode = "coarse") = autosome
+seqlevels(reduced_islands)
+
+# look at the number of observations 
+reduced_islands
+```
+
+## Question 2: How many CpG islands exist on chromosome 4? 
+
+```{r}
+
+# isolate the stuff from chromosome 4 
+reduced_islands
+chr4_islands <- reduced_islands[seqnames(reduced_islands) == "chr4"]
+chr4_islands # 1031 ranges from islands. 
+```
+
+## Question 3: Obtain data from H3K27me3/H1 cell line from the Epigenomics Roadmap Using Annotation Hub. Only count the autosomes (chr 1-22).  How many bases do these reigons cover? 
+
+```{r}
+
+# the h1 cell line -> the h1 line is E003 
+qhs2 <- query(ahub, c("H3K4me3", "E003")) # query for the cell line and histone modification
+qhs2
+
+# download (we used narrow peaks in lecture, will use those again)
+h1_cells = qhs2[["AH29884"]]
+h1_cells 
+
+# isolate only the autosomes (use the vector from before)
+seqlevels(h1_cells, pruning.mode = "coarse") = autosome
+seqlevels(h1_cells) # goes to chr22
+
+sort(h1_cells)
+
+# now take the reduction or union to find the total breadth 
+sum(width(reduce(h1_cells))) # take the sum of the widths of all the reigons where any segments exist. 
+```
+
+## Question 4: Each region should have a "signalValue" so we will find the mean across all regions on the standard chromosomes (H3K27me3)
+
+```{r}
+
+# the h1 cell line -> the h1 line is E003 
+qhs3 <- query(ahub, c("H3K27me3", "E003")) # query for the cell line and histone modification
+qhs3
+
+h1_cells_2 <- qhs3[["AH29892"]]
+seqlevels(h1_cells_2, pruning.mode = "coarse") = autosome
+
+metadata_h1 <- mcols(h1_cells_2)
+metadata_h1
+mean(metadata_h1$signalValue)
+```
+
+## Question 5: Bivalent regions bound by H3K4me3 and H3K27me3. How many bases on standard chromosomes are bivalently marked? 
+
+```{r}
+
+# find the intersection between both of these regions and then add their lenghts together 
+
+bivalent_reigons <- intersect(h1_cells_2, h1_cells) # only the overlapping reigons between these two 
+sum(width(bivalent_reigons))
+```
+
+## Question 6: To what extent do bivalent reigons overlap the CpG islands? how big a fraction (expressed as a number between 0 and 1) of the bivalent regions, overlap one or more CpG Islands? AKA: How many (number) of bivalent regions out of the total number of bivalent reigons overlap cpg islands.
+
+```{r}
+
+# find the overlaps between them. 
+biv_ov <- findOverlaps(bivalent_reigons, reduced_islands) # 22182 in the query overlap with 26641 in the subject 
+
+query_hits <- length(unique(queryHits(biv_ov))) # total hits 
+# percentage = 54 percent 
+query_hits / length(bivalent_reigons)
+```
+
+## Question 7: What percentage of the bases part of the CpG islands overlap the bivalent marked? AKA How many bases from the cpg islands overlap bivalent reigons. 
+
+```{r}
+# find the reigons (bases) of interesection only, must be common to both 
+cpg_ov <- intersect(reduced_islands, bivalent_reigons) 
+cpg_ov # 12174 overlaps 
+
+intersections_width <- sum(width(reduce(cpg_ov))) # how much space do these intersections take up total.
+
+total_width <- sum(width(reduce(reduced_islands))) # total width of the cpg islands 
+
+intersections_width / total_width # intersections bases /bases of cpg islands
+```
+
+## Question 8: How many bases are bivalently marked within 10kb of CpG islands? Use the resize() function
+
+```{r}
+
+# first, extend the range of each interval in the cpg islands frame to stretch 10kb in either direction (pushing out from the center)
+cpg_stretched <- resize(
+  reduced_islands, 
+  width = 20000 + width(reduced_islands), 
+  fix = "center"
+)
+
+# find out how much of this +/- 10kb range overlaps with bivalent reigons
+cpg_bivalent <- intersect(cpg_stretched, bivalent_reigons)
+
+# figure out how many bases this is when looking at just the regions of intersection by summing the width of all regions 
+sum(width(reduce(cpg_bivalent)))
+```
+
+## Question 9: How big a fraction (expressed as 0 and 1) of human genome is in a CpG Island? 
+
+```{r}
+
+# total length of all the cpg islands / length of human genome 
+
+genome_length <- sum(as.numeric(seqlengths(islands)))
+
+sum(seqlengths(reduced_islands)) / 3*10^9
+
+# my answer isn't an option, so i just guessed, no idea what i did wrong.
+
+```
+
+## Question 10: Odds Ratio For Overlap of Bivalent Marks With CPG islands 
+
+```{r}
+
+# make the impty matrix 
+inOut = matrix(0, ncol = 2, nrow = 2) # initializes to 0.
+colnames(inOut) = c("in", "out") # 
+rownames(inOut) = c("in", "out")
+inOut 
+
+# bivalent vs cpg islands 
+
+inOut[1,1] = sum(width(intersect(bivalent_reigons, reduced_islands, ignore.strand = TRUE)))
+# in bivalent reigons, not in reduced islands 
+inOut[1,2] = sum(width(setdiff(bivalent_reigons, reduced_islands, ignore.strand = TRUE)))
+inOut[2,1] = sum(width(setdiff(reduced_islands, bivalent_reigons, ignore.strand = TRUE)))
+inOut[2,2] = 3 * 10^9 - sum(inOut)
+
+inOut
+
+odds_ratio = inOut[1,1] * inOut[2,2] / (inOut[2,1] * inOut[[1,2]])
+odds_ratio # closest to 169, maybe differing genome size? 
+```

@@ -42,7 +42,7 @@ chr4_islands <- reduced_islands[seqnames(reduced_islands) == "chr4"]
 chr4_islands # 1031 ranges from islands. 
 ```
 
-## Question 3: Obtain data from H3K27me3/H1 cell line from the Epigenomics Roadmap Using Annotation Hub. Only count the autosomes (chr 1-22). How many bases do these reigons cover?
+## Question 3: Obtain data from H3K4me3/H1 cell line from the Epigenomics Roadmap Using Annotation Hub. Only count the autosomes (chr 1-22). How many bases do these reigons cover?
 
 ```{r}
 

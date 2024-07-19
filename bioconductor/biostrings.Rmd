@@ -1,0 +1,350 @@
+---
+title: "Module 2: Dealing with Genomic Ranges and Biological Strings"
+output: html_notebook
+---
+
+## Biostrings 
+
+-   this package contains functionality to manipulate biological strings
+
+-   xstring = any type of string
+
+```{r}
+plot(cars)
+
+library("Biostrings") # good for string manipulation 
+
+# constructor 
+dna1 = DNAString("ACGT-G") 
+dna1 # highlights stuff by color! 
+
+# dna string set 
+dnaset = DNAStringSet(c("ACG", "ACGT", "ACGTT"))
+dnaset
+
+# IUPAC Code 
+IUPAC_CODE_MAP
+
+# subset of dna string
+dna1[2:4]
+# subset of dna set 
+dnaset[1:3] # all three that ar ein the set 
+# get one string from a dna string set 
+dnaset[[1]] # just the first index's string 
+
+width(dnaset) # number of bases in each string in the dnaset 
+
+# reverse the order of the dnaset
+rev(dnaset) 
+
+# reverse the string 
+dnaset[[1]]
+rev(dnaset[[1]])
+
+# get the reverse complement 
+dna1
+reverseComplement(dna1)
+
+# translate 
+translate(dnaset) # will translate each string, we get warnings because str length was not / of 3
+
+# frequency 
+alphabetFrequency(dnaset) # tells you the frequency of the characters for each string. 
+letterFrequency(dnaset, letters = "GC") # The frequency of G and Cs 
+
+# dinucleotides - gives you count of AA, GG, etc
+dinucleotideFrequency(dnaset)
+
+# consensus matrix 
+consensusMatrix(dnaset) # for each position (longest string determines how many positions there are) had a certin character at that position. 
+```
+
+## BSgenome 
+
+-   genomes in bioconductor have long naming scheme
+
+-   allows you to access data without loading all the data in
+
+```{r}
+
+library("BSgenome") 
+
+# get the genome 
+
+available.genomes() # lists all genomes you can download from Bioconductor 
+library(BSgenome.Scerevisiae.UCSC.sacCer2) # gets the package you want.
+Scerevisiae <- BSgenome.Scerevisiae.UCSC.sacCer2 
+Scerevisiae
+
+# at this point nothing is in the memory
+
+# load stuff into memory 
+Scerevisiae$chrI # loaded 1 chromosome into memory.
+letterFrequency(Scerevisiae$chrI, "GC", as.prob = TRUE) # GC content= 39 percent
+
+# weird new way of applying functions 
+# BSParams object 
+            #           X = data,        FUN = function 
+param = new("BSParams", X = Scerevisiae, FUN = letterFrequency) # define parameters 
+bsapply(param, "GC") # provide the parameters and what you want to pass into the function letterFrequency("GC") and now it implicitly knows ur asking about data = X 
+# gives you the number of GCs on each chromosome
+
+# GC content: total 
+# unlist flattens list into vector 
+# GC content in every chromsome / total length 
+sum(unlist(bsapply(param, "GC"))) / sum(seqlengths(Scerevisiae)) # 0.39 
+
+# GC content of each chromosome 
+unlist(bsapply(param, "GC", as.prob = TRUE)) # each chromosome gc conten t.
+```
+
+## Biostrings - Matching, finding subsequences in sequences 
+
+-   does what bowtie does
+
+-   but this is for less reads than bowtie
+
+```{r}
+
+search_string <- DNAString("ACGTACGT") 
+
+# searching - allows small indels and subs
+
+# matching a single string to a single string 
+matchPattern(search_string, Scerevisiae$chrI) # get 1 hit, the return object is a "views"
+# count number of matches 
+# countPattern(search_string, Scerevisiae$chr1) # 1 hit -> ** didn't work for some reason 
+
+# match a sequence to  a set of sequences 
+vmatchPattern(search_string, Scerevisiae) # GRanges object, 170 ranges that match from all the chromosomes.
+
+# the search string is its own reverse complement
+
+# more esoteric stuff -> useful though.
+
+# takes a set of reads of same length, makes a dictionary, matches them against the genome
+# matchPWM() # precision weight matrix -> a probabilistic representation of a short sequence. allows you to search for tf binding sites.
+# pairwaseAlignment() # global or local alignment, map millions of reads against a short gene
+# trimLRPatterns() # trims patterns on the Left of Right of a gene -> it can trim promoters, adapters, whatever. 
+```
+
+## BSGenome - Views 
+
+-   views repersent a small subset of a larger sequencing data
+
+```{r}
+
+# __________________________________________________________________________________________
+# if you just matched one string to one other string, you get a views object immeditaely
+# __________________________________________________________________________________________
+
+vi = matchPattern(search_string, Scerevisiae$chrI) # you get a views object 
+vi # looks like an iranges, and underneath the hood, that's actually how it's represented.
+
+ranges(vi) # iranges version of vi
+
+search_string
+Scerevisiae$chrI[57932:57939] # you can access the actual sequence there as a DNAString object.
+
+# you can calculate frequency of each character 
+alphabetFrequency(vi)
+
+# shift the view 
+shift(vi, 10)
+
+# __________________________________________________________________________________________
+# Matched a sequence to the whole set of sequences in a genome.
+# You get a granges object but you can turn it into a views 
+# __________________________________________________________________________________________
+
+# get the granges object for the overlaps 
+gr_matches <- vmatchPattern(search_string, Scerevisiae)
+gr_matches # gives you all the ranges of matches
+vi2 = Views(Scerevisiae, gr_matches) # create a view from the overlapping regions 
+vi2 
+
+# look for the genes for this yeast species 
+library(AnnotationHub)
+ah = AnnotationHub()
+qhs = query(ah, c("sacCer2", "genes")) # Stanford Genes, Ensembl Genes 
+genes = qhs[[1]]
+
+# now we want the promoters 
+proms <- promoters(genes) # we got a lot of warnings, because some of the genes are very close to the start and now we have indices that are (-)
+proms
+prom = trim(proms) # trim off negative indices 
+prom
+
+# create a view object of the promoters 
+promViews = Views(Scerevisiae, prom) # takes indices of prom, finds them in the genome 
+promViews 
+
+# frequency, gc content
+gc_prom = letterFrequency(promViews, "GC", as.prob = TRUE)
+gc_prom # gc content of each promoter.
+mean(gc_prom) # 38 percent.
+plot(density(gc_prom)) # most cluster around 38-40 percent.
+abline(v=0.38)
+```
+
+## Genomic Ranges - Rle 
+
+-   Run Length Encoding: Representing Very Long Vectors
+
+-   Form of compression
+
+-   interesting for representing small signal over a genome: rnaseq, chipseq, etc.
+
+```{r}
+
+# coverage vector -> details for each base in the genome, how many reads cover it.
+library(GenomicRanges)
+
+# construct an rle
+rl = Rle(c(1,1,1,1,1,1,2,2,2,2,2, 4, 4, 2))
+rl # values and lengths (times each value is repeated)
+# access lengths and values 
+runLength(rl) 
+runValue(rl)
+
+# could compute average signal across a set of prespecified genomic reigons in a coverage vector.
+# create an iranges 
+ir = IRanges( start = c(2, 8), width = 4 ) 
+ir
+aggregate(rl, ir, FUN = mean) # mean of all the elements in the two different ranges 
+
+# make a coverage vector from iranges 
+ir = IRanges(start = 1:5, width = 3)
+ir
+coverage(ir) # for each integer, how many ranges is it showing up in? 
+
+# slicing
+
+# slices all 2 or above
+slice(rl, 2) # we get a views object from 7-14 because 2 first appears at index 7 in rl 
+
+# slices all 3 or above 
+slice(rl, 3) # only values > 3 
+
+# try this out with another view
+vi = Views(rl, IRanges(c(2, 8), width = 2))
+vi
+mean(vi)
+
+# genomic ranges, find how many times each index was covered int
+gr <- GRanges(seqnames = "chr1", ranges = IRanges(start = 1:10, width = 3))
+gr
+rl <- coverage(gr) 
+rl # get an rl list because we only have one chromosome reported 
+
+# vi = Views(rl, as(GRanges("chr1", ranges = IRanges(3,7)), "RangesList")) still doesn't work? 
+```
+
+## Lists 
+
+-   x lists
+
+-   xx lists
+
+-   lots of lists
+
+-   similar to normal list in R
+
+-   GRanges list - each element is a GRanges
+
+```{r}
+# construct two granges 
+gr1 <- GRanges(seqnames = "chr1", ranges = IRanges(start = 1:4, width = 3))
+gr2 <- GRanges(seqnames = "chr2", ranges = IRanges(start = 1:4, width = 3))
+
+# make a GRanges List 
+gL <- GRangesList(gr1 = gr1, gr2 = gr2)
+gL # a bunch of granges 
+
+# can think of it as one long GRanges 
+seqnames(gL) # typical attributes 
+
+# get the num ranges of the internal GRanges 
+elementLengths(gL)
+sapply(gL, length) 
+
+# shift 
+shift(gL, 10)
+
+# find overlaps 
+findOverlaps(gL, gr2) # range 2 (gr2) in gL overlaps with gr2
+```
+
+## Genomic Features 
+
+```{r}
+library(GenomicFeatures)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb = TxDb.Hsapiens.UCSC.hg19.knownGene 
+txdb # info on genes, transcripts, coding sequences.
+
+# terminology on the package is not always clear 
+# sometimes the transcript word is used as pre mrna and sometime its the processed mrna (spliced and everything with the introns cut out)
+gr <- GRanges(seqnames = "chr1", strand = "+", ranges = IRanges(start = 11874, end = 14409)) # select a very specific range, examine all the features at these loci
+genes(txdb) # view the genes, this is its own datatype
+
+# which genes from the whoole sequence overlap gr 
+subsetByOverlaps(genes(txdb), gr)
+subsetByOverlaps(genes(txdb), gr, ignore.strand = TRUE)
+
+# which transcripts from whole sequence overlaps gr 
+subsetByOverlaps(transcripts(txdb), gr)
+
+# which exons? 
+subsetByOverlaps(exons(txdb), gr)
+
+# how were these exons combined to make these transcripts? 
+# use exonsBy
+subsetByOverlaps(exonsBy(txdb, by = "tx"), gr)
+# output: shows you the composotion of the 3 trancripts: $1, $2, $3 
+
+# coding sequences - hard to deal with 
+# if you do rnaseq -> get rna structure of the genes and know where the introns are.
+# not all genes/transcripts have a coding sequence 
+# a transcript can have multiple open reading frames -> pick the longest open reading frame -> sometimes there are multiple and you just pick the longest reading frame possible which isn't always accurate 
+subsetByOverlaps(cds(txdb), gr) # 3 different small structures, not necc open reading frames, these are coding sequences in each transcript, intersected in the exons 
+subsetByOverlaps(cdsBy(txdb, by = "tx"), gr) # coding sequence by transcript. Only 1 of the 3 transcripts had the coding sequence.
+
+# get cds lengths from transcript lengths - only processed mrna
+subset(transcriptLengths(txdb, with.cds_len = TRUE), gene_id == "100287102") # 3 transcripts, 3 exons each, and the cds lenghts for each transcripts
+
+sum(width(subsetByOverlaps(cds(txdb), gr))) # also 402, agrees with the transcript lengths 
+```
+
+## RTrackLayer
+
+-   bigwig is a new file format -\> contains a compressed vector across the entire genome
+
+```{r}
+library(rtracklayer)
+?import
+
+table(ah$rdataclass) # type of data on annotation hub 
+
+ah.bw <- subset(ahub, rdataclass == "BigWigFile" & species == "Homo sapiens") # search for bigwig files of human genes 
+
+# import the bw file 
+# bw = ah.bw[[1]]
+bw
+
+gr.chr22 = import(bw, which=GRanges("chr22", ranges = IRanges(1, 10^8)), as = "Rle")
+gr.chr22 # one vector for each chromosome
+
+ah.chain = subset(ah, rdataclass =="ChainFile")
+ah.chain
+
+ah.chain = subset(ah.chain, species == "Homo sapiens")
+ah.chain
+
+query(ah.chain, c("hg18", "hg19"))[[1]] # get the dataset 
+
+# stopped understanding what happened here
+gr.hg18 = liftOver(gr.chr22, chain)
+```
+
+\

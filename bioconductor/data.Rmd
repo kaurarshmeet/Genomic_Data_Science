@@ -1,0 +1,373 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Data Types in Bioconductor
+
+-   experimental data: data that we've collected with high throughtput sequencing, etc.
+
+-   metadata: any annotation on the data, tells us information about the data
+
+-   annotation: data from databases that is relevant to the experiment
+
+    -   gene is highly conserved
+
+    -   gene is super expressed in this cell...
+
+    -   etc
+
+-   Try to take raw and unprocessed data –\> preprocessed data -\> results.
+
+-   Data containers:
+
+    -   Raw data is preoprocessed from all differet sources and put into a common data container (like annotation hub for example) which you can analyze to get the results.
+
+## Annotation 
+
+-   How to annotate data from Bioconductor
+
+-   Look at gene affymetrix mircroarray data
+
+    -   you set up dna using probesets
+
+    -   probsets have identifiers with a code
+
+    -   which peice of dna was measured using this probe -\> affymetrix identifier
+
+    -   ENTREZ - ncbi database
+
+    -   the affymetrix identifier is converted into an ENTREZ number.
+
+-   You can look up any gene location on the UCSC browser.
+
+    -   It has a bunch of rows under a genome with experimental data on segments of the genme
+
+    -   experimental data always has certain biases and problems
+
+-   How to annotate stuff in bioconductor
+
+    -   annotation packages: contain annotations from various sources. Very popular for annotating microarrays.
+
+    -   query online resources: UCSC or ENSEMBL
+
+## Expresssion Set
+
+-   expression set: contains data of measuring the expression of genes
+
+    -   expression matrix: these matrics have features (x), samples (y). Each entry is a number that tells you how much each feature was expressed in that particular sample.
+
+    -   metadata matrix / phenotype data : covariates (x) by samples (y)
+
+        -   covariates examples: time of the experiment, data of the experiment, information on the samples...
+
+    -   metadata on the features / feature data : covariates (x) by features (y)
+
+        -   covariates: info on the feature we are measuring: what gene was measured, etc
+
+    -   **The expression matrix, metadata matrix, and feature metdata matrix make the "Expression Set"**
+
+    -   **"eSet" =\> multiple expression matrices**
+
+        -   for example: for a dna methylation experiment, one matrix corresponds to the methylation
+
+```{r}
+
+# actually coding data container 
+library(ALL)
+
+data(ALL)
+ALL # this is an expression set with 12.6k features, 128 samples 
+
+experimentData(ALL) # Some metadata, two pubmed IDs... 
+abstract(ALL) # You can see the abstract 
+?ALL # Acute Lymphoblastic Leukemia Data from the Ritz Laboratory => on the side, it opens up a bunch of information
+
+# Biological Goal: Select the number of samples and features you want displayed.
+
+ALL[,1:5] # the first five samples, with all the features
+ALL[1:10, 1:5] # 10 samples, 5 features 
+
+# Biological goal: gene expression data 
+
+# what about the gene expression data? 
+exprs(ALL)[1:4, 1:4] # the expression matrix. (x: numbers assigned to features, y: sample ids)
+# get the sample and feature names for the data 
+sampleNames(ALL)
+featureNames(ALL)
+
+# Biological goal: Information about the sample
+
+pData(ALL) # dataframe of the (x: samples, y: information)
+pData(ALL)$age # access specific parts 
+ALL$age # gives you the same thing 
+names(pData(ALL)) # all the metadata columns, the (y:inforamtion)
+# pdata has a phenodata column 
+pData(phenoData(ALL))
+
+phenoData(ALL) # gives you AnnotatedDataFrame object with information about the samples
+# you should stick to using pData though 
+# differnt from pdata
+
+varLabels(ALL) # another way to list (y: information)
+
+# Biological goal : Informations about the features 
+
+featureData(ALL) # in theory (x: features, y: information), unfortunately, in practice, it's often empty
+
+# Biological goal: Since the feature Data matrix is emtpy, have to get the feature names and get information on the feature names manually. 
+
+ids = featureNames(ALL) # first five feature names 
+ids # feature names
+
+# there is a package that will help us 
+library(hgu95av2.db) # a bunch of maps that map feature names to actually interpretable information...
+as.list(hgu95av2ENTREZID[ids]) # converts the ids into ENTREZ IDs, meaningful identifiers. 
+```
+
+## Summarized Experiment 
+
+-   newer version of expression set
+
+```{r}
+library(airway)
+
+# laoding the neccessary data in... 
+data(airway)
+airway # 63677 rows/genes/exons/features, 8 samples.
+# similar to expression set, slightly different syntax 
+
+# Biological Goal: Get the data on each sample from the phenotype matrix 
+
+colData(airway) # returns DataFrame, pData, the information on each "row" which is a sample
+colnames(airway) # names of each sample
+# the feature names 
+rownames(airway) # names of each feature, basically each gene/exon, whatever, each row
+
+# Biological Goal: Experiment Data, about the paper or research 
+
+metadata(airway) 
+
+# Biological Goal: get the expression numbers by accessin the "assays"
+ 
+airway$cell # access elements 
+airway # check the assays part, and it will have a name 
+# get the assay based on the name of the assay
+# assay(data, name of the assay to extract)
+assay(airway, "counts") # rna - seq count data
+
+# Biological Goal: Access the GRanges list associated with each row/feature 
+
+# getting the exons 
+length(rowRanges(airway)) # 63677 features, 1 range for each.
+rowRanges(airway) # each row is a gene, each GRange in the granges list gives us the exons in the gene 
+
+# Biological goal: how many total exons 
+
+# elementNROWS -> length for each range
+# sum them up (all lengths)
+sum(elementNROWS(rowRanges(airway))) # 738009 exons f
+
+# Biological goal: get a list with the start coordinate of each exon.
+start(airway) 
+
+# Biological goals: get the genes from airway that overlap some grange 
+gr = GRanges("1", range = IRanges(start = 1, end = 10^7)) 
+subsetByOverlaps(airway, gr) # the genes inside airways that overlap gr
+# gives us info: dimensions are 329 8 meaning there are 329 genes from airway that overlap gr 
+# you can get the expression data from assays(1) counts for only these overlapping genes. 
+```
+
+## GEOQuery
+
+-   tool for interfacing with GEOQuery
+
+-   GEO is widely used repository, containing gene expression data, epigenetic, etc
+
+-   GEO: dataset(s) from a paper (subdataset for rna sequencing, one for chip sequencing)
+
+    -   each dataset has an accession number. and geo identifier
+
+    -   most people downloading from GEO want all data associated with a publication
+
+```{r}
+
+# load in the GEO Data 
+library(GEOquery)
+
+# Biological Goal: Get all the datasets into expression set 
+
+# get datasets into list from accession number 
+eList = getGEO("GSE11675")
+eList
+# download the datasets into an expression set 
+eData <- eList[[1]]
+class(eData) 
+
+# look at the phenotype data for the sample, what information was collected on the sample
+names(pData(eData)) 
+
+# Biological Goal: Download Raw Data 
+
+# get the raw data from the supplementary files
+# cell file - binary format that holds raw data for microarray data 
+# fastq files - raw data for sequenceing 
+eList2 = getGEOSuppFiles("GSE11675")
+eList2
+class(eList2) # r data frame 
+```
+
+## biomaRt 
+
+-   interface between R and biomaRt
+
+-   any database that wants to be online can upload it to biomaRt and then we can grab it
+
+    -   queries the database.
+
+-   ENSEMBL, UniProt, etc.
+
+```{r}
+
+library(biomaRt)
+
+# Step 1: Choose a Database and a Dataset inside the Database 
+
+# Database = Mart
+head(listMarts()) # the available marts 
+
+# choose the ensemble database
+mart <- useMart("ensembl")
+head(listDatasets(mart)) # the datasets in the ensembl database 
+
+ensemble <- useDataset("hsapiens_gene_ensembl", mart) # ensembl keeps updating its version of the genome.
+
+# Biological Goal: Get gene names associated with microarray probe IDs 
+
+values <- c("202763_at","209310_s_at","207500_at") # these are the affymetrix probe IDs 
+class(values)
+
+# you run a query using getBM (get biomark)
+getBM( 
+  attributes = c("ensembl_gene_id", "affy_hg_u133_plus_2"), # whatever cols you want in output
+  
+  filters = "affy_hg_u133_plus_2", # filter search terms 
+    # affy_hg_u133_plus_2 again to seaarch this value
+  
+  values = values, # the values of identifiers.
+  mart = ensemble) # the database you want to query 
+
+# output: you get the corresponding gene id for every probe ID 
+attributes
+
+
+# Biological Goal: List attributes of the dataset 
+
+attributes <- listAttributes(ensemble)
+attributes # you can go through this and find the attributes 
+head(attributes)
+tail(attributes)
+
+# Alpine marmot gene stable ID => you'll get a bunch of genes not from humans, but that's because ensembl gets a human gene ID and convert it into a matching gene ID in a different organism => called homologs
+
+filters <- listFilters(ensemble)
+filters # view the filters 
+
+
+# Biological Goal: Attributes grouped into pages, ask for only attributes on a specific page
+
+attributePages(ensemble)
+features_only <- listAttributes(ensemble, page = "feature_page")
+
+# to isolate multiple pages -> query the pages individually and merge them 
+
+# sometimes when you use biomart, you get duplicated rows 
+```
+
+## R S4 CLASSES 
+
+-   R s4 classes are used to construct complex data structures.
+
+-   s3 -\> classic object oriented system in R.
+
+-   loading in 2 packages
+
+```{r}
+library(GenomicRanges)
+
+# S3 => no type safety.
+
+# you can make any object into any type of class
+df <- data.frame(y = rnorm(10), x = rnorm(10))
+lm.object <- lm(y ~ x, data = df) # constructing an lm.object 
+lm.object 
+class(lm)
+names(lm.object)
+
+# turn a list into a linear model (lm)
+xx = list(a = letters[1:3], b = rnorm(4))
+class(xx) = "lm" # turn it into a lm class, even though it makes no sense 
+
+# s4 => type safety. You can define what classes need to have and what can be typecasted to each other 
+
+ALL # the expression dataset. 
+# s4 class
+class(ALL)
+isS4(ALL)
+
+# how to get help for a class 
+class?ExpressionSet
+?"ExpressionSet-class"
+?ExpressionSet # documents the constructor
+
+# coding standards for new class 
+# classes have to start with capital letter
+# classes need a constructor 
+
+# rare to make an expression set from scratch
+new("ExpressionSet") # old type of constructor 
+
+# see the definition of the class 
+getClass("ExpressionSet") # each of the "slots' has a class 
+
+# the slots is where the data usually is 
+
+# the way you're not supposed to do it
+ALL@annotation # gets you the annotation of the ALL Expression Set 
+slot(ALL, "annotation")
+# use accesser fucntion - getters basically.
+annotation(ALL)
+# some of the slots are private, not supposed to be used by functions
+
+# OLD_OBJECT = updateObject(OLD_OBJECT) -> overrides old object, updates to the new class definition
+
+# validObject() checks if it's a valid member of its class -> sometimes takes a long time to run. You might create an invalid object if you change instance variables, slot stuff.
+```
+
+## S4 Methods 
+
+```{r}
+# s4 methods are simple functions, allow you to apply other functions based on them.
+
+# call different methods based on the type of x 
+mimicMethod <- function(x) {
+    if (is(x, "matrix"))
+        method1(x)
+    if (is(x, "data.frame"))
+        method2(x)
+    if (is(x, "IRanges"))
+        method3(x)
+}
+class(mimicMethod)
+
+as.data.frame
+class(as.data.frame) # package 
+showMethods("as.data.frame") # the list of possible methods in this package
+
+# get documentation for the methods 
+getMethod("as.data.frame", "DataFrame") # get the data frame method
+method?"as.data.frame,DataFrame"
+
+# get the documentation for the methods 
+??"findOverlaps,Ranges,Ranges-method"
+```

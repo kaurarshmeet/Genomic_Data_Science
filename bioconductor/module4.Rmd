@@ -1,0 +1,188 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Getting Data into Bioconductor
+
+-   We've seen a lot of different file formats but haven't really made a file of formats
+
+-   It's hard to read in the data
+
+-   Microarray
+
+    -   raw data: affymatrix or illumina
+
+        -   There are some low level packages that can handle the binary of these files
+
+        -   packages to move this information into a file format: affy, oligo, lumi, minfi
+
+-   High throughtput genome sequencing
+
+    -   raw data: fastq format
+
+    -   alignment: bam/sam format
+
+    -   further processing of alignments are different for each application area (ChIP, RNA, DNA, etc)
+
+        -   vcf
+
+        -   wig and bigwig
+
+        -   bed and bigbed
+
+        -   bedgraph
+
+        -   text files =\> you have to parse and read them in
+
+            -   readr package
+
+-   Get data from databases of publicly avaiable data
+
+    -   GEO (GEOquery packaga)
+
+    -   SRA (SRAdb package)
+
+    -   ArrayExpress (ArrayExpress package)
+
+## Short Read
+
+-   short read data is typically in the form of a FastqFile
+
+-   functionality for examining base level calls
+
+```{r}
+library(ShortRead)
+
+pathToFastq <- "/Users/arshmeetkaur/Genomic_Data_Science/bioconductor/NA12814_2.fastq"
+reads <- readFastq(pathToFastq)
+reads # sows you hte number of reads and chycles 
+
+sread(reads) # reads 
+quality(reads) # quality values, PHRED scale 
+id(reads) # read names 
+
+# convert quality values into a integer matrix 
+as(quality(reads), "matrix") # (x: reads, y: quality by base position)
+```
+
+## RSamtools
+
+-   in the high throughput sequencing library
+
+-   sam - text file
+
+-   bam - binary version of sam
+
+-   everybody should exclusively work with bam files
+
+```{r}
+pathToBam <- "/Users/arshmeetkaur/Genomic_Data_Science/bioconductor/NA12814_2.bam"
+bamFile <- BamFile(pathToBam)
+bamFile
+
+# bam files can be big if you read into memory 
+
+seqinfo(bamFile)
+
+aln <- scanBam(bamFile) # reads in the file
+# you get back a list of 1 record 
+length(aln)
+class(aln)
+# download the record 
+aln <- aln[[1]]
+names(aln) # 13 rows/columns. seq / qual are the actual read and the qualities.
+
+# multiple alignments: each read can be alsigned to multiple places in the genome
+# could contain un-aligned reads 
+# spliced alignments: reads could be spliced => chunks of the read are mapped to different parts of the genome 
+
+# Biological Goal: Read in a BAM file 
+
+# yeild size 
+yieldSize(bamFile) <- NA # every time we call scan bam, we get x read back 
+open(bamFile) 
+scanBam(bamFile)
+seqinfo(bamFile)
+
+indexBam(bamFile)
+
+# read in reads with some shared property 
+gr <- GRanges( 
+  seqnames = "chr1",
+  ranges = IRanges(start = c(100, 1000), end = c(1500,2000))
+  ) 
+# make a scan bam param object from the granges 
+params <- ScanBamParam(which = gr, what = scanBamWhat())
+scanned_aln <- scanBam(bamFile, param = params)
+scanned_aln
+
+# ranges you were querying the bam file in 
+names(scanned_aln) # 500 reads at a time, twice.
+
+
+# Biological Goal: Get Overview Information on BAM Files
+quickBamFlagSummary(aln)
+```
+
+## Oligo
+
+-   oligo is a package for preprocessing + handling affymatrix and nimble jim chip microarrays
+
+-   affymetrix chips - single column microarrays for gene expression data (like we discussed before)
+
+    -   old version: affy
+
+-   for some areas of genomics, these arrays have been used a lot but they're not commonly used
+
+```{r}
+
+# Load necessary libraries
+library(GEOquery)
+library(oligo)
+
+# Download the supplementary files from GEO
+getGEOSuppFiles("GSE38792")
+
+# List files in the downloaded directory
+list.files("GSE38792")
+
+# Extract the tar file
+untar("GSE38792/GSE38792_RAW.tar", exdir = "GSE38792/CEL")
+
+# List the CEL files with full paths
+cellfiles <- list.files("GSE38792/CEL", full.names = TRUE)
+
+# Read the CEL files
+rawData <- read.celfiles(cellfiles)
+
+# Print a summary of the raw data
+rawData # affymatrix microarrays 
+
+getClass("GeneFeatureSet") # very much like an expression set 
+
+exprs(rawData) # raw intensity measurement from the microarray scanner 
+
+max( exprs(rawData) ) # maximum intensity / expression 
+
+# get the sample names 
+
+# get the sample names
+filename <- sampleNames(rawData)
+pData(rawData)$filename <- filename
+sampleNames <- sub(".*_", "", filename)
+sampleNames <- sub(".CEL.gz$", "", sampleNames)
+sampleNames(rawData) <- sampleNames
+pData(rawData)$group <- ifelse(grepl("^OSA", sampleNames(rawData)),
+                               "OSA", "Control")
+pData(rawData)
+
+# normalize the data 
+
+normData <- rma(rawData)
+normData
+
+boxplot(normData)
+```
+
+-   didn't take notes for rest, just watched vids

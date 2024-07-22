@@ -1,0 +1,407 @@
+---
+title: "Module1"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## What is Statistics?
+
+statistics - generalizable knowledge from data
+
+-   study design - what should we measure and how
+
+-   data visualization - plotting/exploring data
+
+-   preprocessing - normalizing, performing statsitical calculations,
+    remove bias
+
+-   statistical inference - how can we generalize stuff from sample to
+    population
+
+-   communication - reproducible analysis
+
+## Finding Statistical Software You Can Trust
+
+-   website that is not vetted =\> don't trust this
+-   github =\> a lil more reliable
+    -   STAR to see the rating
+    -   see how recently commits are being made and software is being
+        updated
+-   CRAN =\> a lil more reliable, will probably be functioning.
+-   Bioconductor =\> probably peer reviewed, more documentation
+    -   give you info on the downloads stats =\> top percentile,
+        trustworthy
+    -   gives you info on how much the author responds to comments
+
+## What is Data?
+
+-   qualatative
+-   quantatative
+-   already went over the sequencing stuff a long time ago =\>
+    sequencing base calls are relevant in this course.
+-   want to compress the big data
+
+## How to Represent Data?
+
+-   sample from the population ad make inference to generalize findings
+    ot the population
+-   parameter = a characteristic of the population (theta = color) for
+    example
+-   want to quantify values of the samples for the population parameter.
+    c1 = pink, c2 = grey for example.
+-   measure something about that parameter for the sample =\> make
+    inferences about the population.
+-   theta = population parameter
+-   theta(hat) = sample estimate of parameter
+-   y = outcome x = predictors
+
+## Overview:
+
+1.  Bioconductor - how is bioconductor used.
+2.  backgroung of statistics
+3.  exploratory data analysis
+
+## Reproducible Research
+
+-   talked about some research that had good results but was not
+    reproducible -\> and that research lead to clinical trials, which
+    was dangerous
+
+## Acheiving Reproducible Research
+
+-   raw data (whatever you get at the start)
+-   script that preprocesses everything, or recipe document
+-   tidy preprocessed dataset
+-   code book describing each variable -\> use notebooks or use copious
+    comments
+-   fig.align = center
+-   echo = FALSE hides the code from that cell
+-   cache = TRUE stores values you ran it with the first timeb
+-   r sys.Data() you can get the date on the output document
+
+## The Three Data Tables in Genomics
+
+![The Three
+Tables](/Users/arshmeetkaur/Genomic_Data_Science/biostatistics/three_tables.png)
+
+-   information about the samples (x = sample, y = info on sample)
+
+-   information about the features (x = feature id, y = info on feature)
+
+-   data matrix for sample/feature data (x = feature id, y = sample)
+
+```{r The Three Tables}
+
+# load the data from the web 
+con=url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+con
+load(file=con)
+ls() # loads the data in 
+close(con) # close the connection 
+
+bm = bodymap.eset
+bm # Expression Set + Basic Info 
+
+# 1: Extract the expression data 
+exp_data <- exprs(bm)
+head(exp_data)
+dim(exp_data) # 19 cols (samples)
+
+# 2: Look at the samples data 
+pheno_data = pData(bm)
+dim(pheno_data) # 19 rows 
+
+# 3: Look at the features data 
+feature_data = fData(bm)
+dim(feature_data)
+colnames(feature_data) # can view the attributes, here it's just genes 
+```
+
+## Experimental Design
+
+-   central dogma of statistics -\> you have a population to measure
+    things about
+
+    -   probability/sampling -\> choose a sample. (e.g. subset of cancer
+        patients).
+
+        -   sampling variablility -\> samples differ.
+
+        -   in genomics studies sample variability comes from the
+            following sources:
+
+            -   phenotypical variability: the difference between cancer
+                and normal.
+
+            -   measurement error: random measurement error (random or a
+                result of confounding/batch effects)
+
+            -   natural biological variation: any 2 people will have
+                differences in there genes. any two genomic samples from
+                the same person will have differences over time.
+
+                -   sequencing technology does not eliminate biological
+                    variability
+
+        -   how are you going to measure variability within the sample?
+
+            -   technical replicates: take one biological sample and
+                then preprocess it twice =\> measure the variability of
+                the machine that made measurements
+
+            -   biological replicates: take different people/organisms
+                and prep them twice (in the same prep way =\> measure
+                biological variability, phenotype variance
+
+        -   how many replicates you want to measure biological
+            variability
+
+            -   depends on how available the samples are, how the
+                variability manifests itself in genomic data, effect
+                size of mutations/genes
+
+                -   N = \$ you have / \$ per replicate
+
+                -   Rare medelian disease: N \~ 3-5
+
+                -   RNA-seq: N \~ 10-1000
+
+                -   DNA-methylation / epigenetics studies: 10-1000
+
+                -   Common disease, genome-wide association:
+                    10000-1million +
+
+            -   more replicates = more statistical power = more
+                probability of results being correct.
+
+                -   you can test the power before you do any analysis or
+                    study
+
+                    -   with the power.t.test
+
+                    -   if you know that the effect is one-sided (always
+                        causes either positive or negative effect), you
+                        can run a one-sided power.t.test
+
+                -   usually power = 80 percent
+
+                -   calculations based on assumptions
+
+                -   higher power is better
+
+                -   lower powered studies don't replicate
+
+        -   the more variance / spread there is in the data =\> the
+            harder it is to estimate effect size
+
+        -   power increases with sample size and if you know the
+            population standard deviation
+
+    -   measure stuff about the sample (characteristics)
+
+    -   make inferences about the population
+
+## Experimental Design: Confounding And Randomization
+
+-   confounding: seems to be x causing y, but actually but a is both
+    causing x and y
+
+-   78 percent genes were diff expressed between asian/european patients
+
+    -   asian samples / eu samples were collected on different years
+
+    -   if you look between population, 78 percent diff expressed but if
+        you look at year it's 96, so year is the confounder.
+
+-   In all genomic / omic data, its highly likely that a variable is
+    confounding the gene/phenotype that you care about.
+
+    -   How do we deal with this?
+
+        -   randomization: make sure all the people in each group in a
+            study are randomized, of all different values for any given
+            confounding variable.
+
+        -   blocking: when you know that there's a confounding variable
+            to treat, say male/female, you scramble them up and make
+            sure that each trial has an equal or proportionate amount of
+            male/female ratio
+
+-   Make sure that you have balanced number of samples for
+    control/treatment, they should be like half-half
+
+## Exploratory Analysis
+
+-   understand data
+
+-   explain to others
+
+-   plotting is the best way to do it
+
+-   no pie charts, bars are better
+
+-   best fit lines can be misleading
+
+-   box plots are less preferable than scatter plots
+
+-   know the scale, 99 percent of the data could be obscured in like a
+    milimeter and look like a dot
+
+### Basic Exploration
+
+```{r}
+# make everything colorful! 
+tropical = c('goldenrod1', 'aquamarine', 'hotpink', 'chartreuse', 'cyan')
+# reset palette 
+palette(tropical)
+# closed circles
+par(pch=19)
+
+# load the packages you're using for this example
+library(ggplot2)
+library(devtools)
+library(Biobase)
+library(RSkittleBrewer)
+library(org.Hs.eg.db)
+library(AnnotationHub)
+
+# load in the data from a connection 
+con = url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(con)
+ls()
+close(con)
+
+bm = bodymap.eset # expression set
+edata = exprs(bm) # expression matrix 
+pdata = pData(bm) # sample data 
+fdata = fData(bm) # feature data 
+
+# simple checks - tables 
+table(pdata$gender, pdata$race) # racial ratio is off.
+summary(edata) # everything is very skewed (quartiles are 0)
+table(pdata$age, useNA="ifany") # always check for NA values 
+
+# more checks - are there common missing variable names or missing values? 
+sum(pdata$age==" ", na.rm = TRUE) # 0 blankspace vals
+sum(pdata$age=="", na.rm = TRUE)
+
+# check for missing values on the genomic expression value 
+is.na(edata) # checks if values are missing 
+sum(is.na(edata)) # 0 missing values 
+
+# if there is missing data, isolate genes/samples where is it comming from 
+gene_na = rowSums(is.na(edata)) # rowSums(condition) sums all NA records in each row of the matrix 
+table(gene_na) # all features have 0 NA values
+gene_na = colSums(is.na(edata)) # rowSums(condition) sums all NA records in each row of the matrix 
+table(gene_na) # all 19 samples have 0 NA values
+
+# check that the dimensions match in an expected manner 
+dim(fdata)
+dim(pdata)
+dim(edata)
+```
+
+### Plotting
+
+```{r, cache = TRUE}
+
+boxplot(edata[,1]) # the first column (first sample)
+
+# boxplots 
+# all samples, one column, they look pretty skewed 
+boxplot(log2(edata+1), col=2, range=0)
+# all samples, one column, but filtered.
+edata <- as.data.frame(edata)
+filt_edata <- filter(edata,rowMeans(edata) > 1)
+filt_edata <- as.data.frame(filt_edata)
+boxplot(as.matrix(log2(filt_edata)), col=2) # dunno what happened here 
+
+# histograms 
+# set up multiple plot from to view samples side by side
+par(mfrow = c(1,2))
+hist(log2(edata[,1]+1), col=2, range=0)
+hist(log2(edata[,2]+1), col=2, range=0)   # skewed 
+
+# density plots
+# make a density plot to see a bunch of samples 
+plot(density(log2(edata[,1] + 1)), col=2) # blue
+lines(density(log2(edata[,2] + 1)), col=3) # pink
+
+par(mfrow = c(1,1))
+# q-q plot -> compare two diff distributions 
+# one dot for every quantile
+      # row 1                   # row 2  
+qqplot(log2(edata[,1] + 1), log2(edata[,2]+1), col = 3, pch = 19)
+abline(c(0,1)) # c(int, slope)
+# values are higher for the lower quartile in [,1]
+# values are lower for the higher quartile in [,1]
+
+# have no idea what's going on but you want to see data centered around the 0 line with lower variability.
+mm <- log2(edata[,1]+1) - log2(edata[,2]+1)
+aa <-  log2(edata[,1]+1) + log2(edata[,2]+1)
+plot(aa,mm,col=5, pch = 19)
+```
+
+### Checking Consistency
+
+-   making sure the data matches provided metdata
+
+```{r}
+
+###############################################################################################
+# Dimensions: make sure all the dimensions are consisent 
+###############################################################################################
+
+# get ensemble ids 
+aeid <- as.character(fdata[,1])
+
+# extract chromosome information 
+chr = AnnotationDbi::select(org.Hs.eg.db,keys=aeid,keytype="ENSEMBL",columns="CHR")
+dim(chr)
+dim(edata) # from before 
+
+# different dimensions => problem
+# some values are duplicated in chr data so lets remove those -> equalizes rows
+chr = chr[!duplicated(chr[,1]),]
+dim(chr) 
+# check that all the ensembl ids match the rownames of the edata dataset 
+all(chr[,1] == rownames(edata)) 
+
+###############################################################################################
+# Isolate the Y chrom 
+##############################################################################################
+colSums(edatay)
+edatay <- dplyr::filter(edata, chr$CHR == "Y")
+
+# create boxplot
+boxplot(
+  colSums(edatay) # total count for num genes for each sample 
+  ~ pdata$gender # plot against gender
+)
+
+# create boxplot with dots
+boxplot(
+  colSums(edatay) # total count for num genes for each sample 
+  ~ jitter(as.numeric(pdata$gender)), # plot against gender
+  col = as.numeric(pdata$gender),
+  pch = 19
+)
+
+##############################################################################################
+# look at multivariate plots of the data 
+##############################################################################################
+
+# create matrix from data with only features with many citations
+ematrix = as.matrix(edata)
+ematrix = ematrix[rowMeans(ematrix) > 10000, ]
+colramp = colorRampPalette(c(3, "white",2))(9)
+heatmap(ematrix, col = colramp) # clusters them 
+heatmap(ematrix, col = colramp, Rowv = NA, Colv = NA) # keeps them in orig order
+```
+
+# 

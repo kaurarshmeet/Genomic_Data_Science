@@ -1,0 +1,239 @@
+---
+title: "Homework 4: Handling File Formats"
+output: html_notebook
+---
+
+# Homework 4: handling file formats
+
+## Question 1: A yeast RNA seq package contains fastq files for rna reads.
+
+What fraction of reads in this file has an A nucleotide in the 5th base of the read?
+
+```{r}
+library(ShortRead)
+library(yeastRNASeq)
+fastqFilePath <- system.file("reads", "wt_1_f.fastq.gz", package = "yeastRNASeq")
+fastqFilePath 
+
+yeast_reads <- readFastq(fastqFilePath)
+yeast_reads # 1000000 reads
+
+# a dna string set helps you count by position 
+stringset <- sread(yeast_reads)
+stringset
+
+# extract all the fifth bases 
+base5 <- subseq(stringset, start = 5, width = 1) 
+base5
+
+# num reads with A / total num reads
+sum(base5 == 'A') / length(base5) # 0.309 but closes mcq is 0.36, probably due to the data being updated 
+```
+
+## Question 2: avg numeric quality for those reads
+
+```{r}
+
+mean(as(quality(yeast_reads), "matrix")[,5])
+```
+
+## Question 3:
+
+-   leeBamViews experiment -\> aligned bam files from RNAseq experiment on the yeast_reads
+
+-   These reads are short reads (36bp) and have been aligned to the genome using a standard aligner, ie. potential junctions have been ignored (this makes some sense as yeast has very few junctions and the reads are very short).
+
+-   A read duplicated by position is a read where at least one more read shares the same position.
+
+```{r}
+
+library(leeBamViews)
+bamFilePath <- system.file("bam", "isowt5_13e.bam", package="leeBamViews")
+bamFilePath
+
+# We will focus on the interval from 800,000 to 801,000 on yeast chromosome 13.
+# Question: In this interval, how many reads are duplicated by position?
+
+# download the bam file 
+yeast_bamFile <- BamFile(bamFilePath)
+yeast_bamFile
+
+seqinfo(yeast_bamFile)
+
+# read in reads from chr13 specified range
+gr <- GRanges( 
+  seqnames = "Scchr13",
+  ranges = IRanges(start = 800000, end = 801000)
+  ) 
+
+params <- ScanBamParam(which = gr, what = scanBamWhat())
+yeast_chr13 <- scanBam(yeast_bamFile, param = params) 
+names(yeast_chr13)
+yeast_chr13_download <- yeast_chr13[[1]]
+yeast_chr13_download
+
+# find duplicates - at least one read shares the position 
+frequencies <- table(yeast_chr13_download$pos)
+duplicates <- frequencies[frequencies > 1]
+duplicates
+length(duplicates)
+
+frequencies <- table(yeast_chr13_download$pos)
+repeats <- frequencies[frequencies > 1]
+repeats
+sum(repeats) # 129 reads were repeated 
+```
+
+## Question 4: Continuation of Question 3
+
+-   package contaiing 8 BAM files in total (8 samples, 4 groups)
+
+```{r}
+bpaths <- list.files(system.file("bam", package="leeBamViews"), pattern = "bam$", full=TRUE)
+bpaths # a bunch of paths to files 
+
+# need to get Scchr13:807762-808068 from all 8 samples and count the reads across that reigon
+
+# get the bam view 
+bamView_yeast <- BamViews(bpaths)
+
+# set the range 
+gr_yeast <- GRanges( 
+  seqnames = "Scchr13",
+  ranges = IRanges(start = 807762, end = 808068)
+) 
+
+# set the range for everytihing 
+bamRanges(bamView_yeast) <- gr_yeast
+
+# read counts vector 
+read_nums <- c(0,0,0,0,0,0,0,0)
+
+# get the sequences for each sample
+for (i in seq_along(bpaths)) {
+  bf_paths <- BamFile(bpaths[i]) # get each file
+  params <- ScanBamParam(which = gr_yeast, what = "pos") # collect the position column for the gr_yeast range defined above
+  bf_reads <- scanBam(bf_paths, param = params) # get the reads in the specified col/range using params 
+  read_nums[i] <- length(bf_reads[[1]]$pos) # cound the length of the pos columns (it'll count the reads)
+}
+
+mean(read_nums)
+```
+
+## Question 5:
+
+In the lecture on the oligo package an ExpressionSet with 18 samples is constructed, representing normalized data from an Affymetrix gene expression microarray. The samples are divided into two groups given by the group variable.
+
+**Question:** What is the average expression across samples in the control group for the “8149273” probeset (this is a character identifier, not a row number).
+
+```{r}
+
+library(GEOquery)
+library(oligo)
+
+cellfiles <- list.files("GSE38792/CEL", full.names = TRUE)
+celldata <- read.celfiles(cellfiles) # read in all the cellfiles from lecture 
+
+# from lecture 
+filename <- sampleNames(celldata)
+pData(celldata)$filename <- filename
+sampleNames <- sub(".*_", "", filename)
+sampleNames <- sub(".CEL.gz$", "", sampleNames)
+sampleNames(celldata) <- sampleNames
+pData(celldata)$group <- ifelse(grepl("^OSA", sampleNames(celldata)),
+                               "OSA", "Control")
+pData(celldata)
+
+# find it in the probeset 
+normalized <- rma(celldata)
+"8149273" %in% rownames(normalized)
+index <- match("8149273", rownames(normalized))
+index # = 29678
+
+# get the entry from the datasets 
+mean(exprs(normalized[index,])[1:8])
+```
+
+## Question 6
+
+This is a continuation of Question 5.
+
+Use the limma package to fit a two group comparison between the control group and the OSA group, and borrow strength across the genes using eBayes()eBayes(). Include all 18 samples in the model fit.
+
+**Question:** What is the absolute value of the log foldchange (logFClogFC) of the gene with the lowest P.value.
+
+```{r}
+library(limma)
+
+normalized$group <- factor(normalized$group) # make the group split
+normalized$group
+
+# follow from lecture, set up a matrix for each group (second col OSA)
+model_design <- model.matrix( ~ normalized$group )
+model_design
+
+model_fit <- lmFit(normalized, model_design)
+# combine the power by borrowing across genomes 
+model_fit <- eBayes(model_fit)
+
+# extract most significant model fit 
+sigs <- topTable(model_fit)
+sigs$logFC[1]
+```
+
+## Question 7:
+
+This is a continuation of Question 6.
+
+**Question:** How many genes are differentially expressed between the two groups at an adj.P.valueadj.P.value cutoff of 0.05?
+
+```{r}
+subset(sigs, adj.P.Val < 0.05) # 0 rows.
+```
+
+## Question 8:
+
+-   minfi package
+
+-   6 samples: 3 cancer, 3 normals
+
+-   cancer has been shown to be globally less methylated than normal tissue
+
+-   What is the mean difference in beta values between the 3 normal samples and the 3 cancer samples, across OpenSea CpGs?
+
+```{r}
+library(minfi)
+library(minfiData)
+
+# preprocess data 
+preprocessed_data <- preprocessFunnorm(RGsetEx)
+# get the opensea locations
+opensea_locations <- rgSet[c(getIslandStatus(rgSet) == "OpenSea")]
+
+# get the beta values and then subtract mean of normal groups - cancer
+rg_beta <- getBeta(opensea_locations)
+mean(rg_beta[, c(1,2,5)]) - mean(rg_beta[, c(3,4,6)])
+```
+
+## Question 9
+
+This is a continuation of Question 8.
+
+The Caco2 cell line is a colon cancer cell line profiled by ENCODE. Obtain the narrowPeak DNase hyper sensitive sites computed by the analysis working group (AWG).
+
+**Question:** How many of these DNase hypersensitive sites contain one or more CpGs on the 450k array?
+
+```{r}
+ah # still saved somehow 
+
+# download the neccesary data 
+qhs <- query(ah, c("Caco2", "AWG", "Homo sapiens"))
+narrow_peak <- qhs[[1]] # AH2242 
+
+# how many contain cpgs on the 450 k array
+cpgs <- granges(preprocessed_data) # make a range from the cpgs from the previous question
+# just find the unique subject hits (presence in 450 k array)
+length(unique(subjectHits(findOverlaps(cpgs, narrow_peak, type = "within"))))
+```
+
+## Question 10: lucky guess because the data linked is "page not found"

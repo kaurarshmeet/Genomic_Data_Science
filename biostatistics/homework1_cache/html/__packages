@@ -1,0 +1,10 @@
+BiocGenerics
+Biobase
+S4Vectors
+IRanges
+GenomeInfoDb
+GenomicRanges
+matrixStats
+MatrixGenerics
+SummarizedExperiment
+DESeq2

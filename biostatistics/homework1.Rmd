@@ -1,0 +1,285 @@
+---
+title: "homework1"
+output: html_document
+date: "2024-07-23"
+---
+
+## Question 1:
+
+1.  Reproducibility = recompute data results on dataset with knowledge of the statistical pipeline used to calculate them
+2.  Replicability = chance that a new experiment targeting same scientific question will produce a consistent result
+3.  Susie & Joe share data. why can the study be reproducible but not replicable
+    1.  only sharing data doesn't share the statistical pipeline
+
+Initial answer was wrong so process of elimination
+
+-   **The code and data are available so the study is always replicable if it is reproducible.**
+
+    -   no
+
+-   **Joe doesn't make the raw data accessible so Susan can't re-run his code.**
+
+    -    i mean, he does, it says in the question
+
+-   **Susan only uses Python and Joe uses R so when she runs a new experiment, she will definitely get different results.**
+
+    -   as long as methods are the same, this shouldn't matter
+
+-   **All the data and code are available but the codebook does not fully explain the experimental design and all protocols for patient recruitment.**
+
+    -   this makes enough sense
+
+## Question 2:
+
+Put the following code chunk at the top of an R markdown document called *test.Rmd* but set eval=TRUE
+
+-   The plot and table are random the first time you knit the document. They are identical the second time you knit the document. After removing the folders test_cache test_cache and test_files test_files they generate new random versions.
+
+```{r setup, eval=TRUE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+```{r }
+x = rnorm(10)
+plot(x,pch=19,col="dodgerblue")
+```
+
+```{r }
+y = rbinom(20,size=1,prob=0.5)
+table(y)
+```
+
+## Question 3: 
+
+How do you access the genomic data for this object?
+
+assay()
+
+How do you access the phenotype table?
+
+colData()
+
+feature data
+
+rowData()
+
+what does rowRanges() do
+
+gives information on the genomic location and structure of the measured features.
+
+```{r}
+
+# load the following code 
+
+library(Biobase)
+library(GenomicRanges)
+library(SummarizedExperiment)
+
+data(sample.ExpressionSet, package = "Biobase")
+se = makeSummarizedExperimentFromExpressionSet(sample.ExpressionSet)
+
+class(se) # SummarizedExperiment object 
+
+?SummarizedExperiment
+
+?assay
+
+assay(se)
+colData(se)
+rowRanges(se)
+```
+
+## Question 4: 
+
+Suppose that you have measured ChIP-Seq data from 10 healthy individuals and 10 metastatic cancer patients. For each individual you split the sample into two identical sub-samples and perform the ChIP-Seq experiment on each sub-sample. How can you measure (a) biological variability, (b) technical variability and (c) phenotype variability.
+
+(a) biological variability = take multiple samples from both the healthy and cancer groups and compare within those groups to quantify the variability within each group
+
+(b) technical variability = take multiple samples and make subsamples from each group to preprocess twice to measure the variance introduced by the machine
+
+(c) phenotype variability = compare across cancer / normal
+
+## Question 5: 
+
+Gonna say it's this: The Bodymap data has measured more levels of the outcome of interest (tissues) than the Bottomly data has measured (strains).
+
+-   because there are so few observations for each tissue type
+
+-   turned out to be a wrong answer: I think the correct was about num of covariates
+
+```{r}
+
+# compare strains 
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bottomly_eset.RData")
+load(file=con)
+close(con)
+bot = bottomly.eset
+pdata_bot=pData(bot)
+
+# compare tissues 
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+pdata_bm=pData(bm)
+
+# smaller variance, higher power 
+
+boxplot(pdata_bot)
+boxplot(pdata_bm)
+
+length(pdata_bot)
+length(pdata_bm)
+
+pdata_bot$num.tech.reps
+pdata_bm$num.tech.reps
+```
+
+## Question 6: 
+
+The plot is in 3-d so it makes it hard to compare the angles.
+
+## Question 7: 
+
+Which of the following code chunks will make a heatmap of the 500 most highly expressed genes (as defined by total count), without re-ordering due to clustering? Are the highly expressed samples next to each other in sample order?
+
+-   was an incorrect answer but dont know why
+
+-   other option that could've been right was (1) so i reselcted that
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+edata = exprs(bm)
+
+colnames(edata)
+```
+
+```{r}
+row_sums = rowSums(edata)
+index = which(rank(-row_sums) < 500 )
+heatmap(edata[index,],Rowv=NA) 
+```
+
+## Question 8: 
+
+Make an MA-plot of the first sample versus the second sample using the log2 transform (hint: you may have to add 1 first) and the rlog transform from the DESeq2 package. How are the two MA-plots different? Which kind of genes appear most different in each plot?
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+ls()
+close(con)
+bm = bodymap.eset
+pdata = pData(bm)
+edata = exprs(bm)
+
+library(DESeq2)
+
+# log2  
+mm = log2(edata[,1]+1) - log2(edata[,2]+1)
+aa = log2(edata[,1]+1) + log2(edata[,2]+1)
+plot(aa, mm, col = 2)
+
+# rlog 
+rlogged <- rlog(edata)
+
+mm = rlogged[,1] - rlogged[,2]
+aa =  rlogged[,1] + rlogged[,2]
+plot(aa, mm, col = 2)
+```
+
+## Question 9: 
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+```
+
+Cluster the data
+
+1.  With no changes to the data
+
+2.  After filtering all genes with rowMeansrowMeans less than 100
+
+3.  After taking the log2log2 transform of the data without filtering
+
+Color the samples by which study they came from (Hint: consider using the function myplclust.Rmyplclust.R in the package rafalibrafalib available from CRAN and looking at the argument lab.collab.col.)
+
+```{r}
+# no changes to the data 
+
+nochanges = edata 
+dist1 = dist(t(nochanges))
+colramp = colorRampPalette(c(3, "white", 2))(9)
+hclust1 = hclust(dist1)
+plot(hclust1, hang = -1, labels = FALSE)
+
+# filtering all genes with rowmeans < 100 
+
+low_genes = rowMeans(edata) < 100 
+filtered = edata[!low_genes,]
+dist1 = dist(t(filtered))
+hclust1 = hclust(dist1)
+plot(hclust1, hang = -1, labels = FALSE)
+
+# log2 transform of data 
+logged = log2(edata + 1)
+dist1 = dist(t(logged))
+hclust1 = hclust(dist1)
+plot(hclust1, hang = -1, labels = FALSE)
+```
+
+## Question 10: 
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+```
+
+-   log 2 transform
+
+-   k means clustering with set seed
+
+-   choose two clusters
+
+-   use cutree to cut into two clusters
+
+-   compare both things
+
+```{r}
+
+logged = log2(edata + 1)
+
+set.seed(1235)
+
+# choose two clusters 
+chosetwo = kmeans(logged, centers = 2)
+matplot(t(chosetwo$centers), col = 1:2, type = "l", lwd = 2) # 3 centers, 3 colors 
+
+# cluster into two with the hierarchy 
+dist1 = dist(t(logged))
+hclust1 = hclust(dist1)
+twotree = cutree(hclust1, 2)
+plot(hclust1, twotree)
+```
+
+Observations:
+
+-   top split is unnatural

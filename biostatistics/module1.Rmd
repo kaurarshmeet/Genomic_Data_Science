@@ -254,7 +254,7 @@ colnames(feature_data) # can view the attributes, here it's just genes
 
 ### Basic Exploration
 
-```{r}
+```{r Basic Exploration}
 # make everything colorful! 
 tropical = c('goldenrod1', 'aquamarine', 'hotpink', 'chartreuse', 'cyan')
 # reset palette 
@@ -291,7 +291,7 @@ sum(pdata$age==" ", na.rm = TRUE) # 0 blankspace vals
 sum(pdata$age=="", na.rm = TRUE)
 
 # check for missing values on the genomic expression value 
-is.na(edata) # checks if values are missing 
+# is.na(edata) # checks if values are missing 
 sum(is.na(edata)) # 0 missing values 
 
 # if there is missing data, isolate genes/samples where is it comming from 
@@ -308,7 +308,7 @@ dim(edata)
 
 ### Plotting
 
-```{r, cache = TRUE}
+```{r Plotting, cache = TRUE}
 
 boxplot(edata[,1]) # the first column (first sample)
 
@@ -351,7 +351,7 @@ plot(aa,mm,col=5, pch = 19)
 
 -   making sure the data matches provided metdata
 
-```{r}
+```{r Checking Consistency}
 
 ###############################################################################################
 # Dimensions: make sure all the dimensions are consisent 
@@ -375,8 +375,8 @@ all(chr[,1] == rownames(edata))
 ###############################################################################################
 # Isolate the Y chrom 
 ##############################################################################################
-colSums(edatay)
 edatay <- dplyr::filter(edata, chr$CHR == "Y")
+colSums(edatay) 
 
 # create boxplot
 boxplot(
@@ -404,4 +404,114 @@ heatmap(ematrix, col = colramp) # clusters them
 heatmap(ematrix, col = colramp, Rowv = NA, Colv = NA) # keeps them in orig order
 ```
 
-# 
+### Data Transforms
+
+```{r Data Transforms}
+
+#########################################################################################
+# Data Transforms 
+#########################################################################################
+hist(rnorm(1000), col = 2) # normal dist
+hist(edata[,1], cox = 2, breaks = 100)   # true dist 
+hist(log2(edata[,1] + 1), col = 2, breaks = 100) # log transformed (add 1 to make log defined for all vals) => even after the log transforrm, very skewed 
+hist(log2(edata[,1] + 1), col = 2, breaks = 10, 
+     xlim = c(1,15)) # focus on the populated part of the axis only
+# number of genes (rows) that have expression = 0 
+hist(rowSums(edata == 0)) 
+table(rowSums(edata == 0)) # 6644 have 0 0s, and 39449 have 19 0s
+
+#########################################################################################
+# Filter Data 
+# * remove low genes (remove each row that has a med value below 5). 
+#########################################################################################
+low_genes = rowMedians(as.matrix(edata)) < 5 
+table(low_genes)
+filt_edata = edata[!low_genes, ]
+dim(edata)
+dim(filt_edata)
+
+hist(log2(filt_edata[,1] + 1), col = 2) # way more balanced 
+```
+
+### Clustering 
+
+-   Want to identify points that are close to each other and cluster
+    them into groups
+
+-   how close are two things to each other?
+
+    -   euclidean distance? (x1, y1), (x2, y2) =\> sqrt( (x1-x2)^2^  +
+        (y1-y2)\^2)
+
+    -   this is what we use to find the distance between genes
+
+-   clustering: start with 2 nearest points, merge them together (take
+    average x and y vals). find the next two nearest points and merge
+    them. Keep doing this until you get a "cluster dendogram"
+
+    -   closer points are closer together on the dendogram
+
+-   kmeans clustering
+
+    -   guess "centers"
+
+    -   assign all the points to the closest center
+
+    -   recalculate the centers
+
+    -   keep moving the center until you end up with a few distinct
+        clusters
+
+-   cautions
+
+    -   scaling (transforms), outliers, and starting values effect the
+        clustering.
+
+```{r Clustering in R}
+
+# loading in the data 
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+pdata=pData(bm)
+edata=as.data.frame(exprs(bm))
+fdata = fData(bm)
+ls()
+
+# transform the data 
+edata = log2(edata + 1)
+
+# calculate distances between samples / genes 
+dist1 = dist(t(edata)) # distance between each pair of samples in a matrix 
+
+# visualize heatmap of distances 
+colramp = colorRampPalette(c(3, "white", 2))(9)
+heatmap(as.matrix(dist1), col = colramp)
+
+# hierarchical clustering - get the clustergram 
+hclust1 = hclust(dist1)
+plot(hclust1, 
+     hang = -1 # all the samples lined up same level 
+     )
+# color coding 
+library(dendextend)
+dend = as.dendrogram(hclust1) 
+dend = color_labels(hclust1, 
+                    4, 1:4) # four clusters, four colors 
+plot(dend)
+# use predefined labels for samples 
+
+# k means clustering 
+kmeans1 = kmeans(edata, centers = 3)
+names(kmeans1) # all the columns available to me 
+
+# plot the kmeans clusters
+matplot(t(kmeans1$centers), col = 1:3, type = "l", lwd = 3) # 3 centers, 3 colors 
+# each color is a cluster center 
+table(kmeans1$cluster) # tells you how many genes are in each cluster
+
+# make a heatmap based on the clustered genes 
+newdata = as.matrix(edata)[order(kmeans1$cluster),] # reorder the data by the cluster column 
+dim(newdata) # my dimensions didn't shrink 
+```

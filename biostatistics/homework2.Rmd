@@ -1,0 +1,88 @@
+---
+title: "Homework 2"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Question 1:
+
+What % of variation described by 1st principal component
+
+```{r}
+
+# lad montgomery and pickell data set 
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+
+# variance formula is d^2 / sum (d^2)
+
+# no transformations 
+svd1 = svd(edata)
+(svd1$d^2 / sum(svd1$d^2))[1] # 0.89
+
+# log2(data + 1)
+svd2 = svd(log2(edata + 1))
+(svd2$d^2 / sum(svd2$d^2))[1] # 0.97
+
+# process of elimination (answer is 0.89, 0.97, 0.35)
+```
+
+## Question 2: 
+
+-   perform log2(data + 1) transform
+
+-   subtract rowMeans() from samples
+
+-   set seed to 333
+
+-   use kmeans to cluster samples into two clusters
+
+-   use svd to calculate the singular vectors
+
+-   correlation between first singular vector and sample clustering
+    indicator?
+
+```{r question2}
+
+# perform log2(data + 1) transform 
+logged_edata = log2(edata + 1)
+
+# subtract rowMeans() 
+logged_edata_centered = logged_edata - rowMeans(logged_edata)
+
+# use kmeans to cluster samples into two clusters 
+logged_edata_kmeans = kmeans(t(logged_edata_centered), centers = 2)
+
+# use svd to calculate the singular vectors
+svd_logged = svd(logged_edata_centered)
+
+# correlation between first singular vector and sample clustering indicator? 
+cor.test(
+  svd_logged$v[,1], # first singular vector
+  logged_edata_kmeans$cluster # clustering indicator 
+) # 0.87 
+```
+
+## Question 3: 
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+edata = exprs(bm)
+pdata_bm=pData(bm)
+
+
+```

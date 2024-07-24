@@ -19,7 +19,7 @@ Initial answer was wrong so process of elimination
 
 -   **Joe doesn't make the raw data accessible so Susan can't re-run his code.**
 
-    -    i mean, he does, it says in the question
+    -   i mean, he does, it says in the question
 
 -   **Susan only uses Python and Joe uses R so when she runs a new experiment, she will definitely get different results.**
 
@@ -49,7 +49,7 @@ y = rbinom(20,size=1,prob=0.5)
 table(y)
 ```
 
-## Question 3: 
+## Question 3:
 
 How do you access the genomic data for this object?
 
@@ -89,7 +89,7 @@ colData(se)
 rowRanges(se)
 ```
 
-## Question 4: 
+## Question 4:
 
 Suppose that you have measured ChIP-Seq data from 10 healthy individuals and 10 metastatic cancer patients. For each individual you split the sample into two identical sub-samples and perform the ChIP-Seq experiment on each sub-sample. How can you measure (a) biological variability, (b) technical variability and (c) phenotype variability.
 
@@ -99,7 +99,7 @@ Suppose that you have measured ChIP-Seq data from 10 healthy individuals and 10 
 
 (c) phenotype variability = compare across cancer / normal
 
-## Question 5: 
+## Question 5:
 
 Gonna say it's this: The Bodymap data has measured more levels of the outcome of interest (tissues) than the Bottomly data has measured (strains).
 
@@ -135,11 +135,11 @@ pdata_bot$num.tech.reps
 pdata_bm$num.tech.reps
 ```
 
-## Question 6: 
+## Question 6:
 
 The plot is in 3-d so it makes it hard to compare the angles.
 
-## Question 7: 
+## Question 7:
 
 Which of the following code chunks will make a heatmap of the 500 most highly expressed genes (as defined by total count), without re-ordering due to clustering? Are the highly expressed samples next to each other in sample order?
 
@@ -164,7 +164,7 @@ index = which(rank(-row_sums) < 500 )
 heatmap(edata[index,],Rowv=NA) 
 ```
 
-## Question 8: 
+## Question 8:
 
 Make an MA-plot of the first sample versus the second sample using the log2 transform (hint: you may have to add 1 first) and the rlog transform from the DESeq2 package. How are the two MA-plots different? Which kind of genes appear most different in each plot?
 
@@ -193,7 +193,7 @@ aa =  rlogged[,1] + rlogged[,2]
 plot(aa, mm, col = 2)
 ```
 
-## Question 9: 
+## Question 9:
 
 ```{r}
 
@@ -240,7 +240,7 @@ hclust1 = hclust(dist1)
 plot(hclust1, hang = -1, labels = FALSE)
 ```
 
-## Question 10: 
+## Question 10:
 
 ```{r}
 

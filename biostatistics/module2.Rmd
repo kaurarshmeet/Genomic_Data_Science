@@ -1,0 +1,393 @@
+---
+title: "Module1"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Preprocessing + Statistical Modeling
+
+-   Preprocessing when you get genomic measurements, especially across
+    multiple samples, they're often inconsistent across samples.
+
+    -   Make samples/data from those samples more comparable.
+
+        -   Quantile normalization, for example.
+
+-   Statistical modeling - mostly linear modeling in this class.
+
+## Dimension Reduction
+
+-   Statistics Problem : find a set of multivariate variables that are
+    uncorrelated with each other that explain the most variance across
+    the samples
+
+-   Math Problem : find the smallest matrix (fewer var / lower rank)
+    that explains the original data
+
+![Clustering](/Users/arshmeetkaur/Genomic_Data_Science/biostatistics/clustering.png)
+
+-   Returning back to our three tables
+
+![Dimensions](/Users/arshmeetkaur/Genomic_Data_Science/biostatistics/dimensions.png)
+
+-   U D and V matrices
+
+-   U = left singular vectors
+
+    -   patterns that exist across rows in the dataset (rowMeans for
+        example), patterns across arrays
+
+-   D = how much of each of the patterns you have in the U matrix
+    explain the variance in the data
+
+-   V = looking for the patterns across multiple rows (patterns across
+    genes)
+
+-   U D and V are orthogonal / uncorrelated with each other
+
+-   decomposition helps you make scatter plots that reduce the
+    dimensionality in a matrix
+
+-   SNPs versus samples from different European countries
+
+    -   if you plot the samples by two principle components (pc1 and
+        pc2), they cluster geographically
+
+    -   genetics tend to cluster by geography and population structure
+
+-   identify patterns in a dataset (plot two vectors between things) -
+    look at the distance between plotted samples
+
+    -   if distances between samples
+
+```{r Dimension Reduction (in R)}
+
+# load in the neccessary data , extract important information 
+
+library(devtools)
+library(Biobase)
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+ls()
+```
+
+### Plotting the singular values
+
+```{r D vector}
+
+edata = log2(edata + 1) # normalize the data 
+edata_centered = edata - rowMeans(edata) # center the data (eliminates mean as the source of variation)
+svd1 = svd(edata_centered) # single value decomposition makes d, u, v 
+
+# plot the d vector 
+
+plot(svd1$d,ylab="Singular value",col=2) # plot the d values 
+# variance explained 
+plot(svd1$d^2/sum(svd1$d^2),ylab="Percent Variance Explained",col=2)
+```
+
+### Singular Components and Principle Comps:
+
+```{r Singular Components and Principle Comps}
+# plot the first and second singular vectors (not really apparently) (v first and second columns)
+
+par(mfrow=c(1,2))
+plot(svd1$v[,1],col=2,ylab="1st PC")
+plot(svd1$v[,2],col=3,ylab="2nd PC")
+# plot them against each other, colors are for which study they come from 
+plot(svd1$v[,1],svd1$v[,2],ylab="2nd PC",xlab="1st PC", col = c(4,6))
+# boxplot of the first principle in both studies 
+par(mfrow=c(1,1))
+boxplot(svd1$v[,1] ~ pdata$study,border=c(1,2))
+points(svd1$v[,1] ~ jitter(as.numeric(pdata$study)),col=as.numeric(pdata$study))
+
+# PCs versus SVs 
+pc1 = prcomp(edata)
+    # first pc vs first singular vector 
+plot(pc1$rotation[,1],svd1$v[,1])
+
+# if you scale PCs and SVs the same way (by column), PV = SV
+edata_centered2 = t(t(edata) - colMeans(edata))
+svd2 = svd(edata_centered2)
+plot(pc1$rotation[,1],svd2$v[,1],col=2)
+```
+
+### The Outlier Dataset
+
+```{r outliers}
+
+edata_outlier = edata_centered
+# make a very outlying gene
+edata_outlier[1,] = edata_centered[1,] * 10000
+# get the vectors for outlying dataset 
+svd3 = svd(edata_outlier)
+
+# compare the singular vectors with outlier, without outlier
+par(mfrow=c(1,2))
+plot(svd1$v[,1],col=1,main="Without outlier") # normal scatter
+plot(svd3$v[,1],col=2,main="With outlier") # weird behavior 
+plot(svd3$v[,1],edata_outlier[1,],col=4) # very linear 
+```
+
+## Preprocessing + Normalization
+
+-   data comes in raw (too big, too complicated, unormalized, not
+    suitable for analysis)
+
+-   sample pipeline
+
+    -   sequencing =\> sequencing microarrays =\> base calls =\> fastq
+        format file with base qualities.
+
+    -   genes =\> transcripts =\> reads =\> read alignments =\>
+        preprocessing: total abundance of reads / gene
+
+    -   preprocessing: gc content versus gene expression
+
+    -   preprocessing: normalization :
+
+        -   clustering samples by SNPs / alleles like homozygous,
+            heterozygous, etc
+
+        -   chipseq analysis: make an ma plot of the common peaks from
+            replicate samples. fit a line through the mA plot and then
+            subtract enough to straighten that line at 0.
+
+        -   quantile normalization: you have raw data, they have a wide
+            distribution
+
+            -   raw data
+
+            -   <div>
+
+                1.  order values within each sample (each column)
+                2.  average values across rows (each feature) and then
+                    replace every value in the row as the average
+                3.  reorder the averaged values in original order
+
+                ![Dimensions](/Users/arshmeetkaur/Genomic_Data_Science/biostatistics/normalization.png)
+
+                -   It just forces the distributions to be the same as
+                    each other across groups
+
+                -   when do you want to use this?
+
+                    -   small within-group and between group variance
+                        =\> dont use
+
+                    -   large variability within-groups, small variance
+                        across groups =\> use
+
+                    -   small within-group and large between group
+                        variance =\> dont use, variance might be due to
+                        biology
+
+                    -   quantile normalize between groups that are
+                        similar and should have similar distributions
+
+                
+
+                </div>
+
+-   almost always, when you find a big finding (really surprising), you
+    should suspect a technological or sequencing artifact / outlier.
+    look back if you missed any normalization / preproccessing steps
+
+## Quantile Normalization (in R) 
+
+```{r Quantile Normalization}
+
+library(devtools)
+library(Biobase)
+library(preprocessCore)
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+ls()
+
+dim(edata) # wrong dimensions lol 
+```
+
+```{r}
+edata = log2(edata + 1)
+edata = edata[rowMeans(edata) > 3, ]
+colramp = colorRampPalette(c(3,"white",2))(20)
+plot(density(edata[,1]),col=colramp[1],lwd=3,ylim=c(0,.30))
+for(i in 2:20){lines(density(edata[,i]),lwd=3,col=colramp[i])}
+```
+
+```{r}
+# actually quantile normalize 
+norm_edata = normalize.quantiles(as.matrix(edata))
+plot(density(norm_edata[,1]),col=colramp[1],lwd=3,ylim=c(0,.20))
+for(i in 2:20){lines(density(norm_edata[,i]),lwd=3,col=colramp[i])} # the density plot shows that all the samples are now lined up (for the most part)
+# can still have batch effects in the data set though 
+```
+
+## Linear Models 
+
+-   fit a best line relating two variables (x and y)
+
+-   simplest form: just plot two variables against each other
+
+-   outcome = (intercept) + (slope)(cause) + (random noise)
+
+    -   random noise minimizes the distance between outcome and cause
+
+-   assumptions
+
+    -   want residuals to be random and scattered around a line = 0
+
+-   lines don't always fit great, if you're fitting linear to a curve,
+    it's bad.
+
+## Linear Models w/ Categorical Covariates 
+
+-   just dummy encode them, assign a numerical value to each level of
+    the factor variable
+
+    -   you can fit 1 numerical value to multiple categories too
+        (heterozygote / homozygous reccessive = 0, homozygous = 1 for
+        example)
+
+## Adjusting for covariates 
+
+-   add factors for things that could affect data like male/female
+
+## Linear Regression in R 
+
+```{r}
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+pdata=pData(bm)
+edata=as.data.frame(exprs(bm))
+fdata = fData(bm)
+ls()
+```
+
+```{r}
+
+library(devtools)
+library(Biobase)
+library(broom)
+
+# fitting linear model
+edata = as.matrix(edata)
+#     lm( outcome( all genes, one sample), predictor (age))
+lm1 = lm(edata[1,] ~ pdata$age)
+tidy(lm1)
+
+# plotting line
+plot(edata[1,] ~ pdata$age, main = "Regression Line")
+abline(lm1)
+
+# for a categorical predictor like gender 
+
+# relationship between gender and gene's expression 
+boxplot(edata[1,] ~ pdata$gender)
+points(edata[1,] ~ jitter(as.numeric(pdata$gender)),
+       col=as.numeric(pdata$gender))
+
+# r dummy variables stuff for you on its own 
+lm2 = lm(edata[1,] ~ pdata$gender)
+tidy(lm2)
+mod_matr = model.matrix(lm2)
+mod_matr # undr the hood, each gender is assigned a number
+
+# somethign with more levels 
+tidy(lm(edata[1,] ~ pdata$tissue.type)) # the intercept is the missing one (adipose)
+```
+
+### Interaction Models 
+
+```{r}
+lm3 = lm(edata[1,] ~ pdata$age * pdata$gender)
+tidy(lm3) # term for age , gender and age interacting with gender 
+
+# more than one model
+lm4 = lm(edata[1,] ~ pdata$age + pdata$gender)
+tidy(lm4)
+
+# always check for outliers 
+lm5 = lm(edata[6,] ~ pdata$age)
+plot(edata[6,] ~ pdata$age)
+abline(lm5) # olutlier not effecting the line thankfully
+plot(lm5) # identify the outliers from labeled qqplot
+```
+
+## Multiple Regression 
+
+-   one outcome, multiple predictors =\> leads to special considerations
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bottomly_eset.RData")
+load(file=con)
+close(con)
+bot = bottomly.eset
+pdata=pData(bot)
+edata=as.matrix(exprs(bot))
+fdata = fData(bot)
+ls()
+```
+
+```{r}
+
+library(limma)
+library(edge)  
+
+edata = log2(as.matrix(edata) + 1)
+edata = edata[rowMeans(edata) > 10, ] # remove low expressions
+dim(edata) # gonna end up with 36k models ???
+
+# build model matrix 
+mod = model.matrix(~ pdata$strain)
+View(mod) # dummy encodes the strain 
+#           (predictor, response)
+fit = lm.fit(mod, t(edata)) # fits a model where strain predicts each gene.
+length(fit$coefficients) # one model per gene/ feature where strain is the predictor 
+tidy(lm(as.numeric(edata[1, ]) ~ pdata$strain)) # shows you how strain predicts the first gene/feature 
+```
+
+## Batch Effects / Confounders 
+
+-   batch effects = external factors (like enivornmental factors) or
+    technological factors. but really in genomics it's one "batch" of
+    sequencing samples that were done same slide/same time
+
+-    if each biological group is run in its own batch, it's impossible
+    to seperate batch effect from biological effect
+
+-   if each biological group is replicated and THEN is run in its own
+    batch, it's impossible to seperate batch effect from biological
+    effect
+
+-   have to fit regression models fit to the batch variable (only if
+    batch and outcome variable are not highly correlated with each
+    other)
+
+-   What if you don't know what the batch effects are?
+
+    -   surrogate variable analysis
+
+        -   estimate the batch variable
+
+        -   estimate the true batch variable

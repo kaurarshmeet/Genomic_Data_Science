@@ -1,0 +1,245 @@
+---
+title: "Module 3"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Question 1:
+
+```{r}
+
+# load in the data 
+library(snpStats)
+library(broom)
+data(for.exercise)
+use <- seq(1, ncol(snps.10), 10)
+sub.10 <- snps.10[,use]
+snpdata = sub.10@.Data
+View(snpdata)
+status = subject.support$cc
+```
+
+Question:
+
+-   fit a linear / logistic regression model from status to data for 3rd
+    SNP
+
+-   what are the coeffs for SNP variable / how to interpret them?
+
+-   Don't forget to recode the 0 values to NA for the SNP data
+
+```{r}
+
+# isolate 3rd snp from the snpdata
+snpdata3 = as.numeric(snpdata[,3])
+length(snpdata3) # 1000 samples for 3rd snp. 
+
+# recoding the 0 values to NA for snpdata 
+snpdata3[snpdata3==0] = NA 
+
+# fit linear regression 
+lm = lm(status ~ snpdata3)
+tidy(lm) # - 0.04 coeeff for 3rd snp data 
+
+# fit logistic regression 
+glm = glm(status ~ snpdata3, family="binomial") # default from lecture 
+tidy(glm) # - 0.16 coeff for 3rd snp data 
+
+# Answer choice: Both models are fit on the additive scale. So in the linear model case, the coefficient is the decrease in probability associated with each additional copy of the minor allele. In the logistic regression case, it is the decrease in the log odds ratio associated with each additional copy of the minor allele. 
+```
+
+## Question 2: 
+
+Why might logistic reg be better over linear ?
+
+```{r}
+status # as you can see, categorical outcome variable -> good for case-control 
+```
+
+## Question 3: 
+
+Fit a logistic regression model on a recessive (need 2 copies of minor
+allele to confer risk) and additive scale for the 10th SNP. Make a table
+of the fitted values versus the case/control status. Does one model fit
+better than the other?
+
+```{r}
+snpdata10 = as.numeric(snpdata[,10])# snp 10 
+snpdata10[snpdata10 == 0] = NA # make sure to replace nulls 
+snpdata10_2 = snpdata10==2 # only homozygous reccessive 
+
+# reccessive scale 
+glm_10 = glm(status ~ snpdata10_2, family = "binomial")
+tidy(glm_10) # 0.06
+
+# normal - additive 
+glm10 = glm(status ~ snpdata10, family = "binomial")
+tidy(glm10) # 0.002, super high pvalue
+
+# we can't even know which one was better because none of them were even statistically significant 
+```
+
+## Question 4: 
+
+Fit an additive logistic regression model to each SNP. What is the
+average effect size? What is the max? What is the minimum?
+
+```{r}
+
+# tried this but doesn't result in any of the answer choices 
+glm_all = snp.rhs.tests(status ~ 1,snp.data=sub.10)
+slotNames(glm_all)
+mean(chi.squared(glm_all))
+min(chi.squared(glm_all))
+max(chi.squared(glm_all))
+
+# 2851 samples 
+# try with a loop instead - same steps as always 
+
+list_results = list()
+for (i in c(1:2851)) {
+  # first three steps as ususal 
+  snpdata_loop = as.numeric(snpdata[,i])
+  snpdata_loop[snpdata_loop == 0] = NA
+  glm_loop = glm(status ~ snpdata_loop, family = "binomial")
+  # append results to list 
+  list_results[i] = tidy(glm_loop)$statistic[2] # want not the intercept term but after that 
+}
+
+mean(unlist(list_results)) # process of elimination, option 2 
+```
+
+## Question 5
+
+Fit an additive logistic regression model to each SNP and square the
+coefficients. What is the correlation with the results from using
+snp.rhs.testssnp.rhs.tests and chi.squaredchi.squared? Why does this
+make sense?
+
+```{r}
+
+# square the results from each additive model 
+list_results = list()
+for (i in c(1:2851)) {
+  # first three steps as ususal 
+  snpdata_loop = as.numeric(snpdata[,i])
+  snpdata_loop[snpdata_loop == 0] = NA
+  glm_loop = glm(status ~ snpdata_loop, family = "binomial")
+  # append results to list 
+  list_results[i] = tidy(glm_loop)$statistic[2] * tidy(glm_loop)$statistic[2] # want not the intercept term but after that 
+}
+
+glm_all = snp.rhs.tests(status ~ 1,snp.data=sub.10)
+slotNames(glm_all)
+mean(chi.squared(glm_all))
+min(chi.squared(glm_all))
+max(chi.squared(glm_all))
+
+cor(unlist(list_results), chi.squared(glm_all)) # mentioned in vids that they are pretty much the same thing 
+```
+
+## Question 6: 
+
+Load the Montgomery and Pickrell eSet:
+
+```{r}
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+```
+
+```{r}
+
+library(Biobase)
+library(genefilter)
+# do log2(data+1)
+edata_logged = as.matrix( log2(edata + 1) )
+
+# fit f stats between studies and populations 
+pdata # shows you population and study 
+
+# same pvalue, different statistics 
+f_study = rowFtests(edata_logged, as.factor(pdata$study))
+f_study
+t_study = rowttests(edata_logged, as.factor(pdata$study))
+t_study
+
+# same pvalue, different statistics 
+f_population = rowFtests(edata_logged, as.factor(pdata$population))
+f_population 
+t_population = rowttests(edata_logged, as.factor(pdata$population))
+t_population
+```
+
+## Question 7: 
+
+```{r}
+library(DESeq2)
+
+# test for differences between studies with DESeq2 
+edata = edata[complete.cases(edata), ]
+NA %in% edata
+
+deseq_data = DESeqDataSetFromMatrix(countData = round(edata), 
+                                    colData = pdata, 
+                                    design = ~ study # specify the grouping variable 
+                                    ) # from the documentation 
+deseq_test = DESeq(deseq_data)
+summary(results(deseq_test)) # 2999 of the genes have log2 fold change more than 0 in one study compared to another meaning it's more in one study than the other 
+names(results(deseq_test))
+
+stats_deseq = results(deseq_test)$stat
+NA %in% stats_deseq
+
+# do log transform, test for differences with limma and lmFit, ebayes / topTable 
+# edata_logged 
+# simple linear model fit 
+library(limma)
+mod = model.matrix(~ pdata$study) # relevant variable 
+fit = topTable( # only top samples 
+  eBayes( # borrow power from samples
+    lmFit(edata_logged, mod) # fit model 
+    ), number = length(edata_logged), sort.by = "none"
+)
+summary(fit)
+names(fit)
+# get t statistic
+stats_limma = fit$t
+
+cor(stats_limma, stats_deseq) # no idea waht's wrong, just guessed
+```
+
+## Question 8 / 9
+
+Apply the Benjamni-Hochberg correction to the P-values from the two
+previous analyses. How many results are statistically significant at an
+FDR of 0.05 in each analysis?
+
+```{r}
+
+first <- p.adjust(
+  results(deseq_test)$pvalue, method = "BH"
+)
+
+second = p.adjust(
+  fit$P.Value, method = "BH"
+)
+
+results = first < 0.05
+table(results)
+
+results = second < 0.05
+table(results)
+
+# option D is closest i guess? 
+# for 9, option A, because weexepct significant diff when we compare batches, thats why batch effects are so important 
+```

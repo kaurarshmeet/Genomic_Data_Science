@@ -1,0 +1,84 @@
+---
+title: "Module 4"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Gene set enrichment 
+
+-   once you have a gene set of genes that are correlated with the
+    phenotype, line all genes up descending order of statistical
+    significance, give a higher value any time that you come across a
+    gene in the set. if the genes in the set cluster on the high stat
+    sig side, you have encrichment of those set of gene
+
+## Enrichment in the genome
+
+-   want to measure the eQTL values for gwas hits set and gwas non-hits
+    sets to see if higher values for the gwas hits.
+
+-   could make a contingency table to quantify the eQTL stuff
+
+## Steps in Gene set enrichment 
+
+-   goseq and deseq2
+
+-   look at the genomes you want
+
+-   results = use deseq to identify differentially expressed genes
+
+-   pwf = calculate the set of weights proportional to the size of the
+    genes
+
+-   use goseq package on the weights to get the results
+
+## Steps in RNA seq analysis 
+
+1.  Align reads to the genome (tophat2)
+2.  Count the values that correspond to a gene/transcript (command line)
+    or assemble abundance for each gene (cufflinks)
+3.  Normalize the data (cqn, deseq2, ballgown)
+4.  Statistical tests / modeling
+5.  gene set enrichment analysis (goseq)
+
+## ChIP seq analysis steps 
+
+1.  Align reads to genome (bowtie2, bwa)
+2.  peak detection (cisgenome, macs, pics (bioconductor))
+3.  Counting coverage of reads
+4.  Normalization : make ma plot, subtract whatever is needed to make
+    the fit line straight (diffbind, manorm in bioconductor)
+5.  Statistical tests
+6.  Identify the region where a transcription factor is bound
+
+## DNA Methylation pipeline 
+
+1.  Normalize samples (make all the distributions sorta equal)
+2.  Smoothing: smooth data and look for bumps (methylated regions)
+3.  Reigon finding: find the regions that are bumps in the smoothing
+4.  Annotation: annotate the regions so you know what they are
+
+## Steps in GWAS
+
+1.  Variant Identification: Look for variations in the genome compared
+    to the human reference genomes.
+2.  Population stratification: look at confounder population
+    stratification that is correlated with the snps
+3.  statistical tests: calculate a pvalue for every snp plot them and
+    stuff and then only take snps going above some threshold
+4.  examine the local reigon of the selected snps
+5.  annotation : how deleterious the mutation will be
+
+## Combining data types eqtl 
+
+-   what we talked about conceptually before
+
+## Researcher degrees of freedom 
+
+-   there are so many steps of data collection and analysis and stuff
+    that you can make anything statistically significant =\> phacking

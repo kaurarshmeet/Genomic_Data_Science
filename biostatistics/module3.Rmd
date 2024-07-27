@@ -1,0 +1,163 @@
+---
+title: "Module 3"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Introduction
+
+-   talking about statistical significance
+
+    -   pvalues
+
+    -   often many things that you are testing in genomics analysis =\>
+        multiple comparisons
+
+## Logistic Regression
+
+-   case-control study: cases of cardiovascular disease and the controls
+    without it.
+
+    -   measure C or T nucleotide in everyone
+
+    -   see if there is any correlation between nucleotide and disease
+        outcome.
+
+    -   model the outcome (disease / no disease) as a categorical
+        variability.
+
+    -   measure log(OR of disease) = intercept + (coeff)( 0 = C, 1 = G)
+
+        -   coeff - increase in log odds of outcome given a certain
+            characteristic
+
+Interpreting Logistic Regression Results:
+
+![Interpreting Logistic
+Regression](/Users/arshmeetkaur/Genomic_Data_Science/biostatistics/logreg.png)
+
+## Regression for Counts:
+
+-   very common situation in genomics: multiple samples/measurements of
+    the same thing
+
+    -   ex: reads for a gene
+
+-   build a regression model between phenotype and the counts of reads
+    per gene
+
+-   in this case, we use generalized linear models
+
+    -   poisson variable: better than standard linear regression
+
+    -   edgeR and DESeq are better, smooth lines
+
+    -   negative binomial model allows you to handle mean and variance
+        seperately
+
+## GLMs in R
+
+-   
+
+```{r}
+
+# set up 
+library(devtools)
+library(Biobase)
+library(snpStats)
+library(broom)
+library(MASS)
+library(DESeq2)
+
+# load in the SNP data 
+data(for.exercise)
+use <- seq(1, ncol(snps.10), 10) # subset 
+sub.10 <- snps.10[,use]
+View(sub.10) # snp (x) by person (y)
+
+# calculate the principal components
+xxmat <- xxt(sub.10, correct.for.missing=FALSE)
+evv <- eigen(xxmat, symmetric=TRUE)
+pcs <- evv$vectors[,1:5]
+
+# reduce dataset size 
+snpdata = sub.10@.Data
+View(snpdata) # snp (x) by person (y)
+status = subject.support$cc # status (case or control) for all thousand people 
+View(status)
+snp1 = as.numeric(snpdata[,1]) # first snp for all thousand people
+
+snp1[snp1==0] = NA # code null values for snps 
+
+# the logistic regression model 
+          # y ~ x, family = "binomial"
+glm1 = glm(status ~ snp1,family="binomial")
+tidy(glm1)
+
+# logistic regression for having one of the dom allele 
+snp1_dom = (snp1 == 1)
+glm1_dom = glm(status ~ snp1_dom,family="binomial")
+tidy(glm1_dom)
+
+# with the principal comps
+glm2 = glm(status ~ snp1 + pcs[,1:5],family="binomial")
+tidy(glm2)
+
+# fit many glms at once 
+glm_all = snp.rhs.tests(status ~ 1,snp.data=sub.10)
+slotNames(glm_all)
+
+slotNames(glm_all)
+
+qq.chisq(chi.squared(glm_all), df = 1)
+
+# showed more example, look at the notes 
+# glm.nb fits a negative binomia model 
+```
+
+## Inference 
+
+-   confidence intervals give you an idea of the quantity applicable to
+    the whole population
+
+## Null and alternative hypotheses
+
+-   already know all about this
+
+-   null: what you would observe if the hypothesis is wrong, if there is
+    no effect
+
+    -   when something is not significant, not enough data to reject the
+        null
+
+-   variability within groups makes it harder to see differences between
+    them
+
+-   t-statistic and t-tests are used commonly
+
+## Comparing Models 
+
+-    buncha math to compare models, didn't really take notes because i
+    think there will be a practical
+
+## Calculating Statistics in R
+
+-   didn't take notes sue me im tired i'm just scrolling along with
+    coure notes
+
+## Permutations 
+
+-   compare control / noncontrol
+
+-   permute labels -\> get rid of the labels
+
+## PVals + multiple testing
+
+-   already know bout this
+
+Was familiar with the other topics already so i didn't take notes.

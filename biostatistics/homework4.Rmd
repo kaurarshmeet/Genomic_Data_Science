@@ -1,0 +1,117 @@
+---
+title: "Module 4"
+output: 
+  html_document: 
+    css: arial_style.css
+date: "2024-07-21"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## Question 1:
+
+When performing gene set analysis it is critical to use the same
+annotation as was used in pre-processing steps. Read the paper behind
+the Bottomly data set on the ReCount database: [
+http://www.ncbi.nlm.nih.gov/pubmed?term=21455293
+](http://www.ncbi.nlm.nih.gov/pubmed?term=21455293)
+
+Using the paper and the function: supportedGenomes()supportedGenomes()
+in the goseqgoseq package can you figure out which of the Mouse genome
+builds they aligned the reads to.
+
+```{r}
+
+library(goseq)
+library(DESeq2)
+
+genomes <- supportedGenomes()
+genomes
+View(genomes[grep("mouse", genomes$species, ignore.case = TRUE), ]) # has to be one of the ucsc things because these builds are all way too old and there is more recent than build 35 
+
+# doesn't make sense for it to be hg19 
+
+# process of elim -> has to be mm9 
+```
+
+## Question 2: 
+
+Load the Bottomly data with the following code and perform a
+differential expression analysis using limmalimma with only the strain
+variable as an outcome. How many genes are differentially expressed at
+the 5% FDR level using Benjamini-Hochberg correction? What is the gene
+identifier of the first gene differentially expressed at this level
+(just in order, not the smallest FDR) ? (hint: the
+featureNamesfeatureNames function may be useful)
+
+```{r}
+
+library(Biobase)
+library(limma)
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bottomly_eset.RData")
+load(file=con)
+close(con)
+bot = bottomly.eset
+pdata_bot=pData(bot)
+fdata_bot = featureData(bot)
+edata = exprs(bot)
+fdata_bot = fdata_bot[rowMeans(edata) > 5]
+edata = edata[rowMeans(edata) > 5, ]
+edata = log2(edata+1)
+
+```
+
+```{r}
+# analysis with limmma (strain outcome)
+outcome = model.matrix(~ pdata_bot$strain)
+# fit the model 
+lm = topTable(
+  eBayes(lmFit(edata, outcome)) # fit model
+  , number = length(edata), adjust.method = "BH", # Benjamini-Hochberg correction
+  p.value = 0.05, sort.by = "none") # threshold 5 percent, make sure it's doing it's default high to low sorting 
+summary(lm)
+
+# gene id of the first feature at this level 
+View(lm[1,])
+# number of diff expressed genes 
+dim(lm) # 223
+```
+
+## Question 3 / 4: 
+
+Use the nullpnullp and goseqgoseq functions in the goseqgoseq package to
+perform a gene ontology analysis. What is the top category that comes up
+as over represented? (hint: you will need to use the genome information
+on the genome from question 1 and the differential expression analysis
+from question 2.
+
+```{r}
+
+# filter out genes based on the 223 diff expressed ones from q2 
+genes = rownames(edata)
+sig_genes = rownames(lm)[lm$adj.P.Val < 0.05] # keep only those genes in the 223 with pvals less than 0.05.
+filtered_genes = as.integer( genes %in% sig_genes ) # only the genes from the original from 223 with p < 0.05
+names(filtered_genes) <- genes # each gene name and whether it is included or not 
+# filtered_genes
+
+# use nullp to get the weights for the genes 
+weights = nullp(filtered_genes, genome = "mm9", id = "ensGene")
+library(org.Mm.eg.db)
+results = goseq(weights, genome = "mm9", id = "ensGene")
+
+# now we have to get the top category (overreped)
+GO.top10 = results[1:10, 1]
+GO.top10[1] # well, it's not an option? GO:0004888
+
+# what is it? 
+View(results) # look up in results 
+```
+
+```{r}
+
+# didn't work, look up each choice manually
+
+```
+
+## Question 5: Random Guess! First option 3

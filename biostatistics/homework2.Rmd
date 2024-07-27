@@ -37,7 +37,7 @@ svd2 = svd(log2(edata + 1))
 # process of elimination (answer is 0.89, 0.97, 0.35)
 ```
 
-## Question 2: 
+## Question 2:
 
 -   perform log2(data + 1) transform
 
@@ -73,9 +73,82 @@ cor.test(
 ) # 0.87 
 ```
 
-## Question 3: 
+## Question 3:
 
 ```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+edata_bm = exprs(bm)
+pdata_bm=pData(bm)
+
+# fit a linear model relating first gene's counts to number of technical replicates
+lm_first_gene = lm(edata_bm[1,] ~ pdata_bm$num.tech.reps)
+
+# plot data for gene versus covariate 
+plot(edata_bm[1,] ~ pdata_bm$num.tech.reps)
+abline(lm_first_gene)
+
+# why doesn't the model fit well? 
+# a bunch of samples are clustered at num of technical reps = 2 
+```
+
+## Question 4:
+
+```{r}
+
+# fit lm relating first gene's counts to age of person and sex of samples
+lm_age_sex = lm(edata_bm[1,] ~ pdata_bm$age + pdata_bm$gender)
+plot(edata_bm[1,] ~ pdata_bm$age + pdata_bm$gender)
+abline(lm_age_sex)
+
+tidy(lm_age_sex)
+ 
+# value / interpretation of age coeff? 
+# age = -23.91. This coefficient means that for each additional year of age, the count goes down by an average of 23.91 for a fixed sex.
+```
+
+## Question 5:
+
+```{r}
+
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+
+# log2 + 1 transform 
+logged_edata = log2(edata+ 1)
+
+# fit regression model to each sample, population is the outcome 
+mod = model.matrix( ~ pdata$population)
+multiple_regressions = lm.fit(mod, t(edata))
+
+# dimension of residual matrix? effects matrix / coeffs matrix ?
+names(multiple_regressions)
+dim(multiple_regressions$residuals)
+dim(multiple_regressions$effects)
+dim(multiple_regressions$coefficients)
+```
+
+## Question 6:
+
+```{r}
+
+# examining effects matrix
+View(multiple_regressions$effects)
+```
+
+## Question 7:
+
+```{r}
+
+library(limma)
 
 con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
 load(file=con)
@@ -84,5 +157,81 @@ bm = bodymap.eset
 edata = exprs(bm)
 pdata_bm=pData(bm)
 
+# fit many regression models to the expression data where age is outcome variable 
 
+# only keep the rows from pdata_bm (the samples/cols we have data for)
+pdata_bm = na.omit(pdata_bm) # drop nulls so dimensions match
+edata = edata[, rownames(pdata_bm), drop = FALSE]
+
+mod = model.matrix ( ~ pdata_bm$age )
+limma_model = lmFit(edata, mod)
+
+# what is the coeff on the 1000th gene 
+limma_model$coefficients[1000,]
+```
+
+## Question 8:
+
+```{r}
+
+# fit many regression models to the expression data where age is outcome variable 
+# outcome variable tissue.type
+
+# looked at options first
+pdata_bm$tissue.type # 17 levels 
+dim(edata) # 16 levels 
+```
+
+## Question 9:
+
+Why is it difficult to distinguish the study effect from the population
+effect in the Montgomery Pickrell dataset from ReCount?
+
+```{r}
+
+# just examine one chice at a time
+
+# The effects are difficult to distinguish because each study only measured one population. 
+pdata$study
+pdata$population
+# true => only one population type per study (can see from stagger)
+# so you can't seperate the batch effect from population difference effect 
+```
+
+## Question 10:
+
+Set the seed using the command set.seed(33353) then estimate a single
+surrogate variable using the sva function after log2(data + 1)
+transforming the expression data, removing rows with rowMeans less than
+1, and treating age as the outcome (hint: you may have to subset the
+expression data to the samples without missing values of age to get the
+model to fit). What is the correlation between the estimated surrogate
+for batch and age? Is the surrogate more highly correlated with race or
+gender?
+
+```{r}
+# preprocessing the data
+set.seed(33353)
+
+# make sure that all the phenodata and edata dimensions match 
+pdata_bm_nonulls = na.omit(pdata_bm)
+edata_processed = edata[,rownames(pdata_bm_nonulls), drop=FALSE]
+
+# log2 + 1 transform : logged_edata, remove the rows with rowMeans < 1
+logged_edata = log2(edata_processed + 1)
+new_logged_edata = logged_edata[rowMeans(logged_edata) > 1, ]
+
+# fit model - treating age as the outcome 
+mod = model.matrix(~age, data=pdata_bm)
+modnull = model.matrix(~1, data=pdata_bm) # only null 
+sva_model = sva(edata, mod, modnull, n.sv = 2)
+
+# correlation between batch / age 
+cor(sva_model$sv, pdata_bm_nonulls$age) # age 
+
+# corr race
+cor(sva_model$sv, as.numeric(pdata_bm_nonulls$race))
+
+# corr gender
+cor(sva_model$sv, as.numeric(pdata_bm_nonulls$gender)) # more highly corr by gender
 ```

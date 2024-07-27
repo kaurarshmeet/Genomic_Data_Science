@@ -196,15 +196,13 @@ plot(svd3$v[,1],edata_outlier[1,],col=4) # very linear
                     -   quantile normalize between groups that are
                         similar and should have similar distributions
 
-                
-
                 </div>
 
 -   almost always, when you find a big finding (really surprising), you
     should suspect a technological or sequencing artifact / outlier.
     look back if you missed any normalization / preproccessing steps
 
-## Quantile Normalization (in R) 
+## Quantile Normalization (in R)
 
 ```{r Quantile Normalization}
 
@@ -240,7 +238,7 @@ for(i in 2:20){lines(density(norm_edata[,i]),lwd=3,col=colramp[i])} # the densit
 # can still have batch effects in the data set though 
 ```
 
-## Linear Models 
+## Linear Models
 
 -   fit a best line relating two variables (x and y)
 
@@ -257,7 +255,7 @@ for(i in 2:20){lines(density(norm_edata[,i]),lwd=3,col=colramp[i])} # the densit
 -   lines don't always fit great, if you're fitting linear to a curve,
     it's bad.
 
-## Linear Models w/ Categorical Covariates 
+## Linear Models w/ Categorical Covariates
 
 -   just dummy encode them, assign a numerical value to each level of
     the factor variable
@@ -266,11 +264,11 @@ for(i in 2:20){lines(density(norm_edata[,i]),lwd=3,col=colramp[i])} # the densit
         (heterozygote / homozygous reccessive = 0, homozygous = 1 for
         example)
 
-## Adjusting for covariates 
+## Adjusting for covariates
 
 -   add factors for things that could affect data like male/female
 
-## Linear Regression in R 
+## Linear Regression in R
 
 ```{r}
 con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
@@ -316,7 +314,7 @@ mod_matr # undr the hood, each gender is assigned a number
 tidy(lm(edata[1,] ~ pdata$tissue.type)) # the intercept is the missing one (adipose)
 ```
 
-### Interaction Models 
+### Interaction Models
 
 ```{r}
 lm3 = lm(edata[1,] ~ pdata$age * pdata$gender)
@@ -333,7 +331,7 @@ abline(lm5) # olutlier not effecting the line thankfully
 plot(lm5) # identify the outliers from labeled qqplot
 ```
 
-## Multiple Regression 
+## Multiple Regression
 
 -   one outcome, multiple predictors =\> leads to special considerations
 
@@ -367,14 +365,14 @@ length(fit$coefficients) # one model per gene/ feature where strain is the predi
 tidy(lm(as.numeric(edata[1, ]) ~ pdata$strain)) # shows you how strain predicts the first gene/feature 
 ```
 
-## Batch Effects / Confounders 
+## Batch Effects / Confounders
 
 -   batch effects = external factors (like enivornmental factors) or
     technological factors. but really in genomics it's one "batch" of
     sequencing samples that were done same slide/same time
 
--    if each biological group is run in its own batch, it's impossible
-    to seperate batch effect from biological effect
+-   if each biological group is run in its own batch, it's impossible to
+    seperate batch effect from biological effect
 
 -   if each biological group is replicated and THEN is run in its own
     batch, it's impossible to seperate batch effect from biological

@@ -6,8 +6,10 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 - completed 4 modules, 4 assessments, 1 course project
 - revised fundamental genomics concepts and learned about next-generation sequencing techniques.
 
-## Course 2: Python for Genomic Data Science
-- completed 4 modules, 8 assessments, 1 course project 
+<details>
+<summary><strong>Course 2: Python for Genomic Data Science</strong></summary>
+
+Completed 4 modules, 8 assessments, 1 course project. 
 
 <details>
 <summary><strong>Modules</strong></summary>
@@ -37,4 +39,5 @@ For the course project, I read in a multi-FASTA file and answered the following 
 3. **Given a reading frame (1, 2, 3), find all open reading frames in that reading frame. Report the length of the longest ORF and its identifier.**
 4. **Find the longest ORF in a given sequence and its index in that sequence**
 
+</details>
 </details>

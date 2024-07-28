@@ -8,15 +8,15 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 
 ## Course 2: Python for Genomic Data Science
 - completed 4 modules, 8 assessments, 1 course project 
-**Module 1 & 2:** Reviewed fundamental python concepts & string manipulation.
-**Module 3:** Reading in & writing to files, manipulating FASTA and FASTq files
-**Module 4:**
+<p>**Module 1 & 2:** </p> Reviewed fundamental python concepts & string manipulation.
+<p>**Module 3:** </p>  Reading in & writing to files, manipulating FASTA and FASTq files
+<p>**Module 4:** </p> 
 - os module for file & directory navigation
 - sys module to manipulate python env variables
 - getopt module to create command line programs
 - subprocess module to run command line tool pipelines with python scripts 
 - created my own modules & packages
-**Course Project:**
+<p>**Course Project:** </p> 
 Read in a multi-FASTA file and answered the following questions:
 - number of sequences
 - length of longest / shortest sequences and their identifiers

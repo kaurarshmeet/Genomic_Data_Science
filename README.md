@@ -10,7 +10,7 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 <summary><strong>Course 2: Python for Genomic Data Science</strong></summary>
 <br>
 Completed 4 modules, 8 assessments, 1 course project. 
-
+<br>
 <details>
 <summary><strong>Modules</strong></summary>
 <br>

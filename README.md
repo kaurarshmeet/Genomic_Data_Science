@@ -2,9 +2,11 @@
 View the certification here: https://www.coursera.org/specializations/genomic-data-science 
 - completed 24 total modules over 6 courses
 
-## Course 1: Introduction to Genomic Technologies 
+<details>
+<summary><strong> Course 1: Introduction to Genomic Technologies</strong></summary>
 - completed 4 modules, 4 assessments, 1 course project
 - revised fundamental genomics concepts and learned about next-generation sequencing techniques.
+</details>
 
 <details>
 <summary><strong> Course 2: Python for Genomic Data Science</strong></summary>

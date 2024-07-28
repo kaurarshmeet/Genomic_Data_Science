@@ -12,7 +12,7 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 <details>
 <summary><strong>Modules</strong></summary>
 <br>
-** Module 1 & 2: ** Reviewed fundamental Python concepts, string manipulation
+**Module 1 & 2:** Reviewed fundamental Python concepts, string manipulation
 
 **Module 3** Reading in & writing to files, manipulating FASTA and FASTQ files
 

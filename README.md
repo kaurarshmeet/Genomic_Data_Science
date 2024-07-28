@@ -7,7 +7,6 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
   
 - completed 4 modules, 4 assessments, 1 course project
 - revised fundamental genomics concepts and learned about next-generation sequencing techniques.
-- 
 </details>
 
 <details>

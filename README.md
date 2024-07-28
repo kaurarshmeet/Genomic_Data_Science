@@ -14,6 +14,7 @@ Completed 4 modules, 8 assessments, 1 course project.
 <br>
 
 <details>
+<br>
 <summary><strong>Modules</strong></summary>
 <br>
 

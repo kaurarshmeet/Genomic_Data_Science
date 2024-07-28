@@ -13,11 +13,11 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 <summary><strong>Modules</strong></summary>
 <br>
 
-**Module 1 & 2** Reviewed fundamental Python concepts, string manipulation
+**Module 1 & 2:** Reviewed fundamental Python concepts, string manipulation
 
-**Module 3** Reading in & writing to files, manipulating FASTA and FASTQ files
+**Module 3:** Reading in & writing to files, manipulating FASTA and FASTQ files
 
-**Module 4**
+**Module 4:**
 - Using the `os` module for file & directory navigation
 - Using the `sys` module to manipulate Python environment variables
 - Using the `getopt` module to create command line programs
@@ -26,7 +26,9 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 
 </details>
 
-**Course Project**
+<details>
+<summary><strong>Course Project</strong></summary>
+<br>
 
 For the course project, I read in a multi-FASTA file and answered the following questions:
 
@@ -34,3 +36,5 @@ For the course project, I read in a multi-FASTA file and answered the following 
 2. **Length of the longest and shortest sequences and their identifiers**
 3. **Given a reading frame (1, 2, 3), find all open reading frames in that reading frame. Report the length of the longest ORF and its identifier.**
 4. **Find the longest ORF in a given sequence and its index in that sequence**
+
+</details>

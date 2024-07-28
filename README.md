@@ -34,10 +34,10 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 
 For the course project, I read in a multi-FASTA file and answered the following questions:
 
-1. **Number of sequences**
-2. **Length of the longest and shortest sequences and their identifiers**
-3. **Given a reading frame (1, 2, 3), find all open reading frames in that reading frame. Report the length of the longest ORF and its identifier.**
-4. **Find the longest ORF in a given sequence and its index in that sequence**
+1. Number of sequences
+2. Length of the longest and shortest sequences and their identifiers
+3. Given a reading frame (1, 2, 3), find all open reading frames in that reading frame. Report the length of the longest ORF and its identifier.
+4. Find the longest ORF in a given sequence and its index in that sequence
 
 </details>
 </details>

@@ -4,8 +4,10 @@ View the certification here: https://www.coursera.org/specializations/genomic-da
 
 <details>
 <summary><strong> Course 1: Introduction to Genomic Technologies</strong></summary>
+  
 - completed 4 modules, 4 assessments, 1 course project
 - revised fundamental genomics concepts and learned about next-generation sequencing techniques.
+- 
 </details>
 
 <details>

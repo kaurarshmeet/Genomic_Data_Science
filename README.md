@@ -150,18 +150,18 @@ FASTA, FASTQ, BED, GFF3, GTF, SAM//BAM, VCF/BCF
 
 Learned the following command line tools: 
 <br>
-Genome Alignment: bowtie2, BWA
+**Genome Alignment:** bowtie2, BWA
 <br>
-SAM/BAM/VCF Manipulation: samtools, bedtools, BCFtools, igvtools. 
+**SAM/BAM/VCF Manipulation:** samtools, bedtools, BCFtools, igvtools. 
 <br>
-RNA-Seq analysis: tophat, cufflinks, cuffdiff 
+**RNA-Seq analysis:** tophat, cufflinks, cuffdiff 
 
 Completed 4 projects using these tools to extract information out of various file formats. For more detail, see the course folder. 
 
 </details>
 
 <details>
-<summary><strong> Course 5: Biocondctor for Genomic Data Science and Course 6: Statistics for Genomic Data Science </strong></summary>
+<summary><strong> Course 5: Biocondctor for Genomic Data Science && Course 6: Statistics for Genomic Data Science </strong></summary>
 <br>
 <p> Completed 8 modules, 8 course projects </p>
 
@@ -180,15 +180,15 @@ Course 6:
 
 Bioconductor Packages I learned in these two courses: 
 
-Annotation / Interfacing with Browsers: AnnotationHub, biomaRt, GEOQuery, ArrayExpress, GenomicFeatures, rtracklayer, SRAdb.
+**Annotation / Interfacing with Browsers:** AnnotationHub, biomaRt, GEOQuery, ArrayExpress, GenomicFeatures, rtracklayer, SRAdb.
 <br>
-Genomic Data Structures: GenomicRanges, Biostrings, BSgenome, Views, Rle (Run length encoding), ShortRead, RSamtools, broom.
+**Genomic Data Structures:** GenomicRanges, Biostrings, BSgenome, Views, Rle (Run length encoding), ShortRead, RSamtools, broom.
 <br>
-Data Preprocessing: preprocessCore, BioBase 
+**Data Preprocessing:** preprocessCore, BioBase 
 <br>
-Data Analysis & Visualization: oligo, DESeq2, limma, edgeR, snpStats, goseq
+**Data Analysis & Visualization:** oligo, DESeq2, limma, edgeR, snpStats, goseq
 <br>
-Modeling: lm, glm
+**Modeling:** lm, glm
 <br>
 
 </details>

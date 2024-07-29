@@ -145,7 +145,7 @@ You are performing an RNA-seq experiment to determine genes that are differentia
 <details>
 <summary><strong> Course 5: Biocondctor for Genomic Data Science && Course 6: Statistics for Genomic Data Science </strong></summary>
 <br>
-<p> Completed 8 modules, 8 course projects </p>
+<p> Completed 8 modules, 8 course assessments </p>
 
 Course 5: 
 - Learned common data structures: ExpressionSets, SummarizedExperiment and GRanges used across several types of analyses.

@@ -3,7 +3,7 @@ title: annotation hub project
 output: anootation hub project
 ---
 
-# Homework 1: Annotation Hub Project
+# Project 1: Annotation Hub Project
 
 ## Question 1: Use annotation hub to get data on CpG islands in the human genome. How many islands exists on autosomes (chrom 1-22)
 

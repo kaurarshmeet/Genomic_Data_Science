@@ -1,5 +1,5 @@
 ---
-title: "Homework2"
+title: "Project 2"
 output: html_document
 date: "2024-07-19"
 ---

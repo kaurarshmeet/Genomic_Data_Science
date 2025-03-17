@@ -1,4 +1,6 @@
 # Genomic Data Science Specialization - John Hopkins University (via Coursera) 
+All my passion projects were completed through this course.
+
 View the certification here: https://www.coursera.org/specializations/genomic-data-science 
 - completed 24 total modules over 6 courses
 
